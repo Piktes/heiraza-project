@@ -1,0 +1,536 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  /* ========================================
+     LIGHT MODE - Warm Cream Aesthetic
+     ======================================== */
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 30 10% 15%;
+    --card: 40 30% 96%;
+    --card-foreground: 30 10% 15%;
+    --popover: 40 33% 98%;
+    --popover-foreground: 30 10% 15%;
+    --primary: 20 60% 45%;
+    --primary-foreground: 40 33% 98%;
+    --secondary: 35 25% 91%;
+    --secondary-foreground: 30 10% 25%;
+    --muted: 35 20% 92%;
+    --muted-foreground: 30 8% 45%;
+    --border: 35 20% 88%;
+    --input: 35 20% 88%;
+    --ring: 20 50% 60%;
+    --radius: 1rem;
+  }
+
+  /* ========================================
+     DARK MODE - Rich Espresso/Forest
+     ======================================== */
+  .dark {
+    --background: 30 15% 8%;
+    --foreground: 35 20% 92%;
+    --card: 30 12% 12%;
+    --card-foreground: 35 20% 92%;
+    --popover: 30 12% 10%;
+    --popover-foreground: 35 20% 92%;
+    --primary: 25 55% 65%;
+    --primary-foreground: 30 15% 8%;
+    --secondary: 30 10% 18%;
+    --secondary-foreground: 35 15% 85%;
+    --muted: 30 8% 20%;
+    --muted-foreground: 30 10% 55%;
+    --border: 30 10% 20%;
+    --input: 30 10% 20%;
+    --ring: 25 50% 55%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-500;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-wider;
+    text-wrap: balance;
+  }
+
+  p {
+    @apply font-sans leading-relaxed;
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    @apply bg-accent-coral/30 text-foreground;
+  }
+
+  .dark ::selection {
+    @apply bg-accent-coral/40;
+  }
+}
+
+@layer components {
+
+  /* ========================================
+     GLASS MORPHISM COMPONENTS
+     ======================================== */
+  .glass {
+    @apply backdrop-blur-xl border border-white/20;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .dark .glass {
+    background: rgba(30, 27, 23, 0.8);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-card {
+    @apply backdrop-blur-md rounded-3xl border border-white/30;
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.8) 0%,
+        rgba(255, 255, 255, 0.4) 100%);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .dark .glass-card {
+    background: linear-gradient(135deg,
+        rgba(45, 40, 35, 0.9) 0%,
+        rgba(30, 27, 23, 0.7) 100%);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* ========================================
+     GRADIENT BACKGROUNDS
+     ======================================== */
+  .gradient-warm-bg {
+    /* Solid warm color for seamless section transitions */
+    background: #FEF3E8;
+  }
+
+  .dark .gradient-warm-bg {
+    /* Solid warm color for seamless section transitions */
+    background: #252019;
+  }
+
+  .gradient-hero {
+    /* Fades to same color as gradient-warm-bg (#FEF3E8) for seamless transition */
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(254, 243, 232, 0.3) 30%,
+        rgba(254, 243, 232, 0.8) 70%,
+        #FEF3E8 100%);
+  }
+
+  .dark .gradient-hero {
+    /* Fades to same color as dark gradient-warm-bg (#252019) */
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(37, 32, 25, 0.4) 30%,
+        rgba(37, 32, 25, 0.9) 70%,
+        #252019 100%);
+  }
+
+  .gradient-accent {
+    @apply bg-gradient-to-br from-accent-peach via-accent-coral to-accent-rose;
+  }
+
+  /* ========================================
+     GRAIN TEXTURE OVERLAY
+     ======================================== */
+  .grain {
+    position: relative;
+  }
+
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.035;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+  }
+
+  .dark .grain::before {
+    opacity: 0.06;
+  }
+
+  /* ========================================
+     BUTTONS
+     ======================================== */
+  .btn-primary {
+    @apply px-8 py-4 rounded-full font-sans font-medium text-sm tracking-wide;
+    @apply bg-foreground text-background;
+    @apply hover:opacity-90 active:scale-[0.98];
+    @apply transition-all duration-300 ease-out;
+    @apply shadow-soft hover:shadow-soft-lg;
+  }
+
+  .btn-secondary {
+    @apply px-8 py-4 rounded-full font-sans font-medium text-sm tracking-wide;
+    @apply border-2 border-foreground/20 text-foreground;
+    @apply hover:bg-foreground/5 active:scale-[0.98];
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .btn-ghost {
+    @apply px-6 py-3 rounded-full font-sans font-medium text-sm tracking-wide;
+    @apply text-foreground/70 hover:text-foreground;
+    @apply hover:bg-foreground/5;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* ========================================
+     ANIMATION UTILITIES
+     ======================================== */
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animate-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animate-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .animate-delay-600 {
+    animation-delay: 600ms;
+  }
+
+  .animate-delay-700 {
+    animation-delay: 700ms;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-400 ease-out;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .hover-lift:hover {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.4);
+  }
+
+  .img-zoom {
+    @apply overflow-hidden;
+  }
+
+  .img-zoom img {
+    @apply transition-transform duration-700 ease-out;
+  }
+
+  .img-zoom:hover img {
+    @apply scale-105;
+  }
+
+  /* ========================================
+     SECTION STYLING
+     ======================================== */
+  .section-padding {
+    @apply py-24 md:py-32 lg:py-40;
+  }
+
+  .section-title {
+    @apply font-display text-display-lg tracking-wider uppercase;
+  }
+
+  .section-subtitle {
+    @apply font-sans text-muted-foreground text-lg md:text-xl max-w-2xl;
+  }
+
+  /* ========================================
+     SCROLLBAR
+     ======================================== */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted/30;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ========================================
+     FORM INPUTS
+     ======================================== */
+  .input-field {
+    @apply w-full px-6 py-4 rounded-2xl;
+    @apply bg-white/50 dark:bg-white/5;
+    @apply border border-border focus:border-primary/50;
+    @apply outline-none transition-all duration-300;
+    @apply placeholder:text-muted-foreground/50;
+    @apply focus:ring-2 focus:ring-primary/20;
+  }
+
+  /* ========================================
+     CARD VARIANTS
+     ======================================== */
+  .card-soft {
+    @apply rounded-3xl p-6 md:p-8;
+    @apply bg-card border border-border/50;
+    @apply shadow-soft transition-all duration-400;
+  }
+
+  .card-soft:hover {
+    @apply shadow-soft-lg border-border;
+  }
+
+  /* ========================================
+     TOGGLE SWITCH
+     ======================================== */
+  .toggle-switch {
+    @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .toggle-switch[data-state="checked"] {
+    @apply bg-accent-coral;
+  }
+
+  .toggle-switch[data-state="unchecked"] {
+    @apply bg-muted;
+  }
+
+  .toggle-switch-thumb {
+    @apply pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform;
+  }
+
+  .toggle-switch[data-state="checked"] .toggle-switch-thumb {
+    @apply translate-x-5;
+  }
+
+  .toggle-switch[data-state="unchecked"] .toggle-switch-thumb {
+    @apply translate-x-0.5;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg,
+        hsl(var(--foreground)) 0%,
+        hsl(var(--muted-foreground)) 100%);
+  }
+
+  .blob {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+
+  .img-smooth {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* ========================================
+   KEN BURNS ANIMATION (Hero Slider)
+   ======================================== */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+
+  50% {
+    transform: scale(1.15) translate(-2%, -1%);
+  }
+
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+@keyframes ken-burns-alt {
+  0% {
+    transform: scale(1.1) translate(-1%, 0);
+  }
+
+  50% {
+    transform: scale(1) translate(1%, 1%);
+  }
+
+  100% {
+    transform: scale(1.1) translate(-1%, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 20s ease-in-out infinite;
+}
+
+.animate-ken-burns-alt {
+  animation: ken-burns-alt 25s ease-in-out infinite;
+}
+
+/* ========================================
+   FADE ANIMATIONS
+   ======================================== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.6s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ========================================
+   PULSE GLOW (Audio Player)
+   ======================================== */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 121, 96, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(232, 121, 96, 0);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ========================================
+   AUDIO WAVEFORM ANIMATION
+   ======================================== */
+@keyframes waveform {
+
+  0%,
+  100% {
+    height: 4px;
+  }
+
+  50% {
+    height: 16px;
+  }
+}
+
+.animate-waveform {
+  animation: waveform 0.5s ease-in-out infinite;
+}
+
+.animate-waveform:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.animate-waveform:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.animate-waveform:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.animate-waveform:nth-child(5) {
+  animation-delay: 0.4s;
+}

@@ -1,0 +1,274 @@
+// Prisma Schema for Heiraza Musician Website
+// Database: MySQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// SITE SETTINGS (Global Controls)
+// ========================================
+model SiteSettings {
+  id                    Int      @id @default(autoincrement())
+  
+  // Audio Player Settings
+  isAudioPlayerVisible  Boolean  @default(true)
+  
+  // Shop Section Settings
+  isShopVisible         Boolean  @default(true)
+  
+  // Social Links Toggle
+  isSocialLinksVisible  Boolean  @default(true)
+  
+  // YouTube Section Settings
+  isYoutubeVisible      Boolean  @default(true)
+  youtubeAutoScroll     Boolean  @default(true)
+  youtubeScrollInterval Int      @default(2000)
+  
+  // Hero Section Settings
+  heroSliderEnabled     Boolean  @default(true)
+  heroSliderInterval    Int      @default(5000)
+  heroKenBurnsEffect    Boolean  @default(true)
+  
+  // Auto Reply - Contact Form Success Popup
+  contactSuccessImage   String?  @db.LongText
+  contactSuccessTitle   String?  @db.VarChar(255)
+  contactSuccessMessage String?  @db.Text
+  
+  // Auto Reply - Newsletter Subscription Success Popup
+  subscribeSuccessImage   String?  @db.LongText
+  subscribeSuccessTitle   String?  @db.VarChar(255)
+  subscribeSuccessMessage String?  @db.Text
+  
+  // Email Templates for Event Notifications
+  reminderTemplate      String?  @db.LongText
+  soldOutTemplate       String?  @db.LongText
+  announcementTemplate  String?  @db.LongText
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ========================================
+// AUDIO TRACKS (Music Player)
+// ========================================
+model Track {
+  id           String   @id @default(cuid())
+  title        String   @db.VarChar(255)
+  artist       String   @db.VarChar(255)
+  fileUrl      String?  @db.VarChar(500)
+  externalLink String?  @db.VarChar(500)
+  coverImage   String?  @db.VarChar(500)
+  duration     Int?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ========================================
+// YOUTUBE VIDEOS
+// ========================================
+model Video {
+  id          Int      @id @default(autoincrement())
+  title       String?  @db.VarChar(255)
+  youtubeUrl  String   @db.VarChar(500)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ========================================
+// ARTIST PROFILE
+// ========================================
+model Artist {
+  id          Int      @id @default(autoincrement())
+  name        String   @default("Heiraza")
+  bio         String   @db.Text
+  heroImage   String   @db.VarChar(500)
+  
+  // Social Media Links
+  facebookUrl   String?  @db.VarChar(500)
+  instagramUrl  String?  @db.VarChar(500)
+  tiktokUrl     String?  @db.VarChar(500)
+  youtubeUrl    String?  @db.VarChar(500)
+  spotifyUrl    String?  @db.VarChar(500)
+  appleMusicUrl String?  @db.VarChar(500)
+  soundcloudUrl String?  @db.VarChar(500)
+  twitterUrl    String?  @db.VarChar(500)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  heroImages  HeroImage[]
+  bioImages   BioImage[]
+}
+
+// ========================================
+// HERO IMAGES (Multiple for Slider)
+// ========================================
+model HeroImage {
+  id        Int      @id @default(autoincrement())
+  artistId  Int
+  imageUrl  String   @db.LongText  // LongText for Base64 images
+  altText   String?  @db.VarChar(255)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+}
+
+// ========================================
+// BIO IMAGES (Multiple for Bio Slider)
+// ========================================
+model BioImage {
+  id        Int      @id @default(autoincrement())
+  artistId  Int
+  imageUrl  String   @db.LongText  // LongText for Base64 images
+  caption   String?  @db.VarChar(255)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+}
+
+// ========================================
+// SPECIAL EVENTS (Pop-up Announcements)
+// ========================================
+model SpecialEvent {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  message     String    @db.Text
+  imageUrl    String?   @db.VarChar(500)
+  linkUrl     String?   @db.VarChar(500)
+  linkText    String?   @db.VarChar(100)
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean   @default(true)
+  showOnce    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ========================================
+// GALLERY IMAGES
+// ========================================
+model GalleryImage {
+  id           Int      @id @default(autoincrement())
+  imageUrl     String   @db.LongText  // LongText for Base64 images
+  thumbnailUrl String?  @db.LongText  // LongText for Base64 thumbnails
+  title        String?  @db.VarChar(255)
+  caption      String?  @db.Text
+  category     String?  @db.VarChar(100)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+// ========================================
+// EVENTS (Concerts/Shows)
+// ========================================
+model Event {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(255)
+  description  String?  @db.Text
+  date         DateTime
+  venue        String   @db.VarChar(255)
+  city         String   @db.VarChar(100)
+  country      String   @db.VarChar(100) @default("USA")
+  price        String?  @db.VarChar(50)
+  ticketUrl    String?  @db.VarChar(500)
+  imageUrl     String?  @db.VarChar(500)
+  isActive     Boolean  @default(true)
+  isFree       Boolean  @default(false)
+  isSoldOut    Boolean  @default(false)
+  autoReminder Boolean  @default(true)
+  autoSoldOut  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ========================================
+// PRODUCTS (Merch Shop)
+// ========================================
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  image       String   @db.VarChar(500)
+  buyUrl      String   @db.VarChar(500)
+  stock       Int      @default(0)
+  category    String   @default("merch") @db.VarChar(50)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ========================================
+// SUBSCRIBERS (Newsletter)
+// ========================================
+model Subscriber {
+  id                   Int       @id @default(autoincrement())
+  email                String    @unique @db.VarChar(255)
+  receiveEventAlerts   Boolean   @default(false)
+  joinedAt             DateTime  @default(now())
+  isActive             Boolean   @default(true)
+  
+  // Geolocation (from IP at signup)
+  country              String?   @db.VarChar(100)
+  city                 String?   @db.VarChar(100)
+  countryCode          String?   @db.VarChar(5)
+  
+  // Unsubscribe data
+  unsubscribeToken     String?   @unique @db.VarChar(64)
+  unsubscribeReason    String?   @db.Text
+  unsubscribedAt       DateTime?
+}
+
+// ========================================
+// MESSAGES (Contact Form)
+// ========================================
+model Message {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  email       String   @db.VarChar(255)
+  message     String   @db.Text
+  country     String?  @db.VarChar(100)
+  city        String?  @db.VarChar(100)
+  countryCode String?  @db.VarChar(5)
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
+}
+
+// ========================================
+// ADMIN USERS
+// ========================================
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  email     String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========================================
+// EMAIL SIGNATURE (for Reply System)
+// ========================================
+model EmailSignature {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  logoUrl   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

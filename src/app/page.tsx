@@ -12,6 +12,8 @@ import { SpecialEventPopup } from "@/components/special-event-popup";
 import { GalleryStack } from "@/components/gallery-stack";
 import { ContactForm } from "@/components/contact-form";
 import { NewsletterForm } from "@/components/newsletter-form";
+import { JsonLd } from "@/components/json-ld";
+import { MobileNav } from "@/components/mobile-nav";
 import {
   ArrowRight, Mail, MapPin, Calendar, Sparkles, MessageCircle,
   Music2, ImageIcon,
@@ -117,6 +119,7 @@ export default async function Home() {
 
   return (
     <main className="relative grain">
+      <JsonLd artist={artist} />
       <SpecialEventPopup event={specialEvent} />
 
       {/* Navigation */}
@@ -133,9 +136,13 @@ export default async function Home() {
               <Link href="#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</Link>
               <Link href="#contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Link href="/admin" className="hidden sm:flex btn-ghost text-xs">Admin</Link>
+              <MobileNav
+                artistName={artist?.name}
+                showVideos={(settings?.isYoutubeVisible ?? true) && videos.length > 0}
+                showShop={settings?.isShopVisible ?? true}
+              />
             </div>
           </div>
         </div>
@@ -346,13 +353,6 @@ export default async function Home() {
                 {settings?.isShopVisible && <li><Link href="#shop" className="hover:text-foreground transition-colors">Shop</Link></li>}
                 <li><Link href="#about" className="hover:text-foreground transition-colors">About</Link></li>
                 <li><Link href="#contact" className="hover:text-foreground transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-display text-sm tracking-wider uppercase mb-4">Admin</h4>
-              <ul className="space-y-3 text-muted-foreground">
-                <li><Link href="/admin" className="hover:text-foreground transition-colors">Dashboard</Link></li>
-                <li><Link href="/admin/settings" className="hover:text-foreground transition-colors">Settings</Link></li>
               </ul>
             </div>
           </div>

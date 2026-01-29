@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { logAction } from "@/lib/logger";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SubscribersList } from "@/components/admin/subscribers-list";
 import {
@@ -58,7 +59,19 @@ async function getSubscribers(search?: string, status?: string) {
 async function deleteSubscriber(formData: FormData) {
     "use server";
     const id = parseInt(formData.get("id") as string);
+
+    // Get subscriber email for logging before deletion
+    const subscriber = await prisma.subscriber.findUnique({ where: { id } });
+
     await prisma.subscriber.delete({ where: { id } });
+
+    // Log the deletion action
+    logAction(
+        "Sahadmin",
+        "DELETE_SUBSCRIBER",
+        `Deleted subscriber: ${subscriber?.email || "Unknown"}`
+    );
+
     revalidatePath("/admin/subscribers");
 }
 

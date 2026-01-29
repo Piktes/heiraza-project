@@ -30,28 +30,28 @@ export async function getAllTracks() {
 export async function addTrack(formData: FormData) {
   const title = formData.get("title") as string;
   const artist = formData.get("artist") as string || "Heiraza";
-  const audioSrc = formData.get("audioSrc") as string;
+  const fileUrl = formData.get("fileUrl") as string;
   const audioFile = formData.get("audioFile") as File | null;
   const coverImageData = formData.get("coverImage") as string;
-  
+
   if (!title) {
     return { success: false, error: "Title is required" };
   }
 
-  let finalAudioSrc = audioSrc;
+  let finalFileUrl = fileUrl;
   let finalCoverImage: string | null = null;
 
   // Handle audio file upload
   if (audioFile && audioFile.size > 0) {
     const uploadResult = await uploadAudioFile(audioFile);
     if (uploadResult.success) {
-      finalAudioSrc = uploadResult.url!;
+      finalFileUrl = uploadResult.url!;
     } else {
       return { success: false, error: uploadResult.error };
     }
   }
 
-  if (!finalAudioSrc) {
+  if (!finalFileUrl) {
     return { success: false, error: "Audio source is required (upload or URL)" };
   }
 
@@ -73,7 +73,7 @@ export async function addTrack(formData: FormData) {
     data: {
       title,
       artist,
-      audioSrc: finalAudioSrc,
+      fileUrl: finalFileUrl,
       coverImage: finalCoverImage,
       sortOrder: newSortOrder,
       isActive: true,
@@ -82,7 +82,7 @@ export async function addTrack(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/");
-  
+
   return { success: true, track };
 }
 
@@ -93,7 +93,7 @@ export async function updateTrack(formData: FormData) {
   const id = formData.get("id") as string;
   const title = formData.get("title") as string;
   const artist = formData.get("artist") as string;
-  const audioSrc = formData.get("audioSrc") as string;
+  const fileUrl = formData.get("fileUrl") as string;
   const coverImageData = formData.get("coverImage") as string;
   const isActive = formData.get("isActive") === "true";
 
@@ -108,8 +108,8 @@ export async function updateTrack(formData: FormData) {
   };
 
   // Update audio source if provided
-  if (audioSrc) {
-    updateData.audioSrc = audioSrc;
+  if (fileUrl) {
+    updateData.fileUrl = fileUrl;
   }
 
   // Handle new cover image
@@ -127,7 +127,7 @@ export async function updateTrack(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/");
-  
+
   return { success: true, track };
 }
 
@@ -145,7 +145,7 @@ export async function toggleTrackActive(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/");
-  
+
   return { success: true };
 }
 
@@ -161,7 +161,7 @@ export async function deleteTrack(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/");
-  
+
   return { success: true };
 }
 
@@ -202,7 +202,7 @@ async function uploadAudioFile(file: File): Promise<{ success: boolean; url?: st
 // UPLOAD BASE64 IMAGE
 // ========================================
 async function uploadBase64Image(
-  base64Data: string, 
+  base64Data: string,
   folder: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {

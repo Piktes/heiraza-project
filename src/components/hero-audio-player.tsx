@@ -8,7 +8,8 @@ interface Track {
   id: string;
   title: string;
   artist: string;
-  audioSrc: string;
+  fileUrl?: string | null;
+  externalLink?: string | null;
   coverImage?: string | null;
   duration?: number | null;
 }
@@ -36,8 +37,8 @@ export function HeroAudioPlayer({ tracks, isVisible = true }: HeroAudioPlayerPro
   const currentTrack = tracks[currentTrackIndex];
   const hasMultipleTracks = tracks.length > 1;
 
-  // Get audio source from track
-  const getAudioSrc = (track: Track) => track.audioSrc;
+  // Get audio source from track (prefer fileUrl, fallback to externalLink)
+  const getAudioSrc = (track: Track) => track.fileUrl || track.externalLink || "";
 
   // Handle play/pause
   const togglePlay = useCallback(() => {

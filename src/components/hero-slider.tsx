@@ -16,19 +16,19 @@ interface HeroSliderProps {
   kenBurnsEffect?: boolean;
 }
 
-export function HeroSlider({ 
-  images, 
+export function HeroSlider({
+  images,
   fallbackImage,
-  interval = 5000, 
-  kenBurnsEffect = true 
+  interval = 5000,
+  kenBurnsEffect = true
 }: HeroSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Use images array or fallback to single image
-  const slides = images.length > 0 
-    ? images 
-    : fallbackImage 
-      ? [{ id: 0, imageUrl: fallbackImage, altText: "Hero" }] 
+  const slides = images.length > 0
+    ? images
+    : fallbackImage
+      ? [{ id: 0, imageUrl: fallbackImage, altText: "Hero" }]
       : [];
 
   const isSlider = slides.length > 1;
@@ -51,24 +51,23 @@ export function HeroSlider({
       {slides.map((slide, idx) => {
         const isActive = idx === currentIndex;
         const isPrev = idx === (currentIndex - 1 + slides.length) % slides.length;
-        
+
         return (
           <div
             key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              isActive ? "opacity-100 z-10" : isPrev ? "opacity-0 z-5" : "opacity-0 z-0"
-            }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ${isActive ? "opacity-100 z-10" : isPrev ? "opacity-0 z-5" : "opacity-0 z-0"
+              }`}
           >
             <div
-              className={`absolute inset-0 ${
-                kenBurnsEffect && isActive ? "animate-ken-burns" : ""
-              }`}
+              className={`absolute inset-0 ${kenBurnsEffect && isActive ? "animate-ken-burns" : ""
+                }`}
             >
               <Image
                 src={slide.imageUrl}
                 alt={slide.altText || "Hero background"}
                 fill
                 className="object-cover object-center"
+                sizes="100vw"
                 priority={idx === 0}
                 quality={90}
               />

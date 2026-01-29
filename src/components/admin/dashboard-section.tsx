@@ -1,22 +1,29 @@
 "use client";
 
 import { useState, useRef, useEffect, ReactNode } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 interface DashboardSectionProps {
     id: string;
+    icon: ReactNode;
+    title: string;
+    subtitle?: string;
+    actionButton?: ReactNode;
     children: ReactNode;
     defaultOpen?: boolean;
 }
 
 export function DashboardSection({
     id,
+    icon,
+    title,
+    subtitle,
+    actionButton,
     children,
-    defaultOpen = true,
+    defaultOpen = false,
 }: DashboardSectionProps) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const sectionRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
 
     // Listen for custom events to open and scroll to this section
     useEffect(() => {
@@ -36,50 +43,62 @@ export function DashboardSection({
 
     return (
         <div id={id} ref={sectionRef} className="relative">
-            {/* Toggle button */}
+            {/* Accordion Header - Always visible */}
             <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setIsOpen(!isOpen);
-                }}
-                className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                title={isOpen ? "Collapse section" : "Expand section"}
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full flex items-center justify-between gap-4 p-4 glass-card hover:bg-muted/50 transition-colors ${isOpen ? "rounded-t-xl rounded-b-none" : "rounded-xl"
+                    }`}
             >
-                {isOpen ? (
-                    <ChevronUp size={20} className="text-muted-foreground" />
-                ) : (
-                    <ChevronDown size={20} className="text-muted-foreground" />
-                )}
+                {/* Left side: Icon + Title + Subtitle */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 text-accent-coral">
+                        {icon}
+                    </div>
+                    <div className="text-left min-w-0">
+                        <h2 className="font-display text-lg tracking-wide uppercase truncate">
+                            {title}
+                        </h2>
+                        {subtitle && (
+                            <p className="text-sm text-muted-foreground truncate">
+                                {subtitle}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right side: Action button + Chevron */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    {/* Action button - stop propagation to prevent toggle */}
+                    {actionButton && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                            {actionButton}
+                        </div>
+                    )}
+
+                    {/* Single chevron - points down when closed, up when open */}
+                    <div className="p-2 rounded-lg bg-muted/50">
+                        <ChevronDown
+                            size={20}
+                            className={`text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : "rotate-0"
+                                }`}
+                        />
+                    </div>
+                </div>
             </button>
 
-            {/* Collapsible container using CSS Grid for smooth animation */}
+            {/* Collapsible content - fast grid animation */}
             <div
-                className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+                className="grid transition-[grid-template-rows] duration-200 ease-out"
                 style={{
                     gridTemplateRows: isOpen ? "1fr" : "0fr",
                 }}
             >
-                <div
-                    ref={contentRef}
-                    className="overflow-hidden"
-                >
-                    <div className={`transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
+                <div className="overflow-hidden">
+                    <div className="glass-card rounded-t-none rounded-b-xl border-t-0">
                         {children}
                     </div>
                 </div>
             </div>
-
-            {/* Collapsed preview - shows section title area */}
-            {!isOpen && (
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="w-full p-4 text-left glass-card rounded-xl hover:bg-muted/50 transition-colors flex items-center justify-between"
-                    aria-label="Expand section"
-                >
-                    <span className="text-muted-foreground text-sm">Click to expand section</span>
-                    <ChevronDown size={18} className="text-muted-foreground" />
-                </button>
-            )}
         </div>
     );
 }

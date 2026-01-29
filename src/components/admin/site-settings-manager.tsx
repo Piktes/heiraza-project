@@ -89,16 +89,7 @@ export function SiteSettingsManager({ settings, onToggle }: SiteSettingsManagerP
     ];
 
     return (
-        <div className="glass-card p-8">
-            <div className="flex items-center gap-3 mb-6">
-                <Settings className="text-accent-coral" size={24} />
-                <div>
-                    <h2 className="font-display text-2xl tracking-wide">Site Settings</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Control visibility of sections across your website
-                    </p>
-                </div>
-            </div>
+        <div className="p-6">
 
             {isPending && (
                 <div className="mb-4 p-3 rounded-lg bg-accent-coral/10 border border-accent-coral/20 flex items-center gap-2 text-accent-coral">
@@ -129,8 +120,8 @@ export function SiteSettingsManager({ settings, onToggle }: SiteSettingsManagerP
                             onClick={() => handleToggle(item.name, item.value)}
                             disabled={isPending}
                             className={`relative w-14 h-8 rounded-full transition-colors duration-300 ${item.value
-                                    ? "bg-accent-coral"
-                                    : "bg-muted"
+                                ? "bg-accent-coral"
+                                : "bg-muted"
                                 } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
                             aria-label={`Toggle ${item.label}`}
                         >

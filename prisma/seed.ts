@@ -1,14 +1,17 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("═══════════════════════════════════════");
-  console.log("🌱 HEIRAZA DATABASE SEEDING v3.0");
+  console.log("🌱 HEIRAZA DATABASE SEEDING v4.0");
   console.log("═══════════════════════════════════════\n");
 
-  // Clear existing data
+  // Clear existing data (in correct order for foreign keys)
   console.log("🗑️  Clearing existing data...");
+  await prisma.systemLog.deleteMany();
+  await prisma.adminUser.deleteMany();
   await prisma.track.deleteMany();
   await prisma.video.deleteMany();
   await prisma.galleryImage.deleteMany();
@@ -21,10 +24,39 @@ async function main() {
   await prisma.event.deleteMany();
   await prisma.artist.deleteMany();
   await prisma.siteSettings.deleteMany();
-  await prisma.admin.deleteMany();
+  await prisma.emailSignature.deleteMany();
   console.log("   ✓ All tables cleared\n");
 
-  // Site Settings
+  // ========================================
+  // ADMIN USER (with bcrypt hashed password)
+  // ========================================
+  console.log("👤 Creating Admin User...");
+  const passwordHash = await bcrypt.hash("Sahs2207$", 12);
+  const adminUser = await prisma.adminUser.create({
+    data: {
+      username: "Sahadmin",
+      passwordHash: passwordHash,
+      email: "admin@heiraza.com",
+      role: "admin",
+      isActive: true,
+    },
+  });
+  console.log(`   ✓ Admin created: ${adminUser.username}`);
+  console.log(`   ✓ Password: Sahs2207$ (hashed with bcrypt)\n`);
+
+  // Log the seed action
+  await prisma.systemLog.create({
+    data: {
+      level: "INFO",
+      action: "SYSTEM_SEED",
+      username: "System",
+      details: "Database seeded with initial data",
+    },
+  });
+
+  // ========================================
+  // SITE SETTINGS
+  // ========================================
   console.log("⚙️  Creating Site Settings...");
   await prisma.siteSettings.create({
     data: {
@@ -41,7 +73,9 @@ async function main() {
   });
   console.log("   ✓ Site settings created\n");
 
-  // Artist Profile
+  // ========================================
+  // ARTIST PROFILE
+  // ========================================
   console.log("🎤 Creating Artist profile...");
   const artist = await prisma.artist.create({
     data: {
@@ -66,32 +100,34 @@ From the underground clubs of Brooklyn to festival stages across three continent
   });
   console.log(`   ✓ Artist created: ${artist.name}\n`);
 
-  // Audio Tracks (using correct schema with String id)
+  // ========================================
+  // AUDIO TRACKS
+  // ========================================
   console.log("🎵 Creating Audio Tracks...");
   const tracks = [
-    {
-      title: "Whispers in the Static",
-      artist: "Heiraza",
-      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-      coverImage: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&q=80",
+    { 
+      title: "Whispers in the Static", 
+      artist: "Heiraza", 
+      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", 
+      coverImage: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&q=80", 
       sortOrder: 0,
-      isActive: true
+      isActive: true 
     },
-    {
-      title: "Midnight Echoes",
-      artist: "Heiraza",
-      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&q=80",
+    { 
+      title: "Midnight Echoes", 
+      artist: "Heiraza", 
+      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", 
+      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&q=80", 
       sortOrder: 1,
-      isActive: true
+      isActive: true 
     },
-    {
-      title: "Neon Dreams",
-      artist: "Heiraza ft. Luna",
-      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-      coverImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80",
+    { 
+      title: "Neon Dreams", 
+      artist: "Heiraza ft. Luna", 
+      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", 
+      coverImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80", 
       sortOrder: 2,
-      isActive: true
+      isActive: true 
     },
   ];
   for (const track of tracks) {
@@ -99,7 +135,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   }
   console.log(`   ✓ ${tracks.length} tracks created\n`);
 
-  // YouTube Videos
+  // ========================================
+  // YOUTUBE VIDEOS
+  // ========================================
   console.log("📺 Creating YouTube Videos...");
   const videos = [
     { title: "Whispers in the Static - Official Video", youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", sortOrder: 0, isActive: true },
@@ -113,7 +151,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   }
   console.log(`   ✓ ${videos.length} videos created\n`);
 
-  // Hero Images
+  // ========================================
+  // HERO IMAGES
+  // ========================================
   console.log("🖼️  Creating Hero Images...");
   const heroImages = [
     { imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1920&q=85", altText: "Heiraza performing live", sortOrder: 0 },
@@ -124,7 +164,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   }
   console.log(`   ✓ ${heroImages.length} hero images created\n`);
 
-  // Bio Images
+  // ========================================
+  // BIO IMAGES
+  // ========================================
   console.log("📸 Creating Bio Images...");
   const bioImages = [
     { imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=85", caption: "In the studio", sortOrder: 0 },
@@ -135,7 +177,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   }
   console.log(`   ✓ ${bioImages.length} bio images created\n`);
 
-  // Gallery Images
+  // ========================================
+  // GALLERY IMAGES
+  // ========================================
   console.log("🖼️  Creating Gallery Images...");
   const galleryImages = [
     { imageUrl: "https://images.unsplash.com/photo-1501281668745-f7f57925c138?w=800&q=80", title: "NYC Show", category: "concerts", sortOrder: 0 },
@@ -148,7 +192,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   }
   console.log(`   ✓ ${galleryImages.length} gallery images created\n`);
 
-  // Events
+  // ========================================
+  // EVENTS
+  // ========================================
   console.log("📅 Creating Events...");
   const events = [
     { title: "Echoes Tour - Opening Night", date: new Date("2026-09-18T20:00:00"), venue: "The Bowery Ballroom", city: "New York", country: "USA", ticketUrl: "https://ticketmaster.com/heiraza-nyc" },
@@ -158,7 +204,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   for (const e of events) await prisma.event.create({ data: e });
   console.log(`   ✓ ${events.length} events created\n`);
 
-  // Products
+  // ========================================
+  // PRODUCTS
+  // ========================================
   console.log("🛍️  Creating Products...");
   const products = [
     { name: "Whispers in the Static - Limited Vinyl", price: 45.0, image: "https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?w=800&q=80", buyUrl: "https://shop.heiraza.com/vinyl", stock: 250, category: "music" },
@@ -168,7 +216,9 @@ From the underground clubs of Brooklyn to festival stages across three continent
   for (const p of products) await prisma.product.create({ data: p });
   console.log(`   ✓ ${products.length} products created\n`);
 
-  // Special Event Popup
+  // ========================================
+  // SPECIAL EVENT POPUP
+  // ========================================
   console.log("🎉 Creating Special Event...");
   await prisma.specialEvent.create({
     data: {
@@ -185,20 +235,20 @@ From the underground clubs of Brooklyn to festival stages across three continent
   });
   console.log("   ✓ Special event created\n");
 
-  // Admin
-  console.log("👤 Creating Admin...");
-  await prisma.admin.create({ data: { username: "root", password: "1234", email: "admin@heiraza.com" } });
-  console.log("   ✓ Admin: root / 1234\n");
-
-  // Samples
-  console.log("📧 Creating samples...");
+  // ========================================
+  // SAMPLE DATA
+  // ========================================
+  console.log("📧 Creating sample data...");
   await prisma.subscriber.createMany({ data: [{ email: "fan1@example.com" }, { email: "fan2@example.com" }] });
   await prisma.message.create({ data: { name: "Sarah", email: "sarah@email.com", message: "Love your music!", isRead: false } });
-  console.log("   ✓ Samples created\n");
+  console.log("   ✓ Sample subscribers and messages created\n");
 
   console.log("═══════════════════════════════════════");
   console.log("🎉 SEEDING COMPLETE!");
   console.log("═══════════════════════════════════════");
+  console.log("\n📋 Admin Credentials:");
+  console.log("   Username: Sahadmin");
+  console.log("   Password: Sahs2207$");
   console.log("\n🚀 Run: npx prisma db push && npm run db:seed && npm run dev\n");
 }
 

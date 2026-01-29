@@ -48,7 +48,7 @@ function formatEventVariables(event: {
     price: string | null;
     description: string | null;
     imageUrl: string | null;
-    ticketUrl: string;
+    ticketUrl: string | null;
 }): EventVariables {
     const eventDate = new Date(event.date);
 
@@ -70,7 +70,7 @@ function formatEventVariables(event: {
         event_price: event.price || "TBA",
         event_description: event.description || "",
         event_image_url: event.imageUrl || "",
-        ticket_link: event.ticketUrl,
+        ticket_link: event.ticketUrl || "",
     };
 }
 
@@ -94,7 +94,7 @@ export async function sendEventEmail(
         price: string | null;
         description: string | null;
         imageUrl: string | null;
-        ticketUrl: string;
+        ticketUrl: string | null;
     }
 ): Promise<{ success: boolean; recipientCount: number; error?: string }> {
     try {
@@ -225,7 +225,7 @@ export async function sendTestEmail(
         price: string | null;
         description: string | null;
         imageUrl: string | null;
-        ticketUrl: string;
+        ticketUrl: string | null;
     }
 ): Promise<{ success: boolean; error?: string }> {
     try {

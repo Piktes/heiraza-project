@@ -126,25 +126,19 @@ export function GalleryManager({
     };
 
     return (
-        <div className="glass-card p-8">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <ImageIcon className="text-accent-coral" size={24} />
-                    <div>
-                        <h2 className="font-display text-2xl tracking-wide">Photo Gallery</h2>
-                        <p className="text-sm text-muted-foreground">
-                            {activeCount} active / {images.length} total
-                        </p>
-                    </div>
+        <div className="p-6">
+            {/* Action button row */}
+            {!isAdding && (
+                <div className="flex justify-end mb-4">
+                    <button
+                        onClick={() => setIsAdding(true)}
+                        className="btn-primary flex items-center gap-2 text-sm"
+                    >
+                        <Plus size={16} />
+                        Add Images
+                    </button>
                 </div>
-                <button
-                    onClick={() => setIsAdding(true)}
-                    className="btn-primary flex items-center gap-2 text-sm"
-                >
-                    <Plus size={16} />
-                    Add Images
-                </button>
-            </div>
+            )}
 
             {/* ========================================
           ADD NEW IMAGES FORM

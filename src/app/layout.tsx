@@ -26,21 +26,54 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "HEIRAZA | Official Website",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://heiraza.com"),
+  title: {
+    default: "HEIRAZA | Official Website",
+    template: "%s | Heiraza",
+  },
   description: "Official website of Heiraza - Experience the sound that moves souls. Music, Events, and Exclusive Merch.",
-  keywords: ["Heiraza", "Music", "Artist", "Concerts", "Merch", "Tour", "Events"],
+  keywords: ["Heiraza", "Music Artist", "Sonic Architect", "Concerts", "Live Shows", "Merch", "Tour Dates", "Events", "Electronic Music"],
   authors: [{ name: "Heiraza" }],
+  creator: "Heiraza",
+  publisher: "Heiraza",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
-    title: "HEIRAZA | Official Website",
+    title: "HEIRAZA | Sonic Architect",
     description: "Experience the sound that moves souls. Music, Events, and Exclusive Merch.",
+    url: "/",
+    siteName: "Heiraza",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Heiraza - Sonic Architect",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "HEIRAZA | Official Website",
+    title: "HEIRAZA | Sonic Architect",
     description: "Experience the sound that moves souls.",
+    images: ["/og-image.jpg"],
   },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { logAction } from "@/lib/logger";
 
 // GET - Fetch artist data
 export async function GET() {
   try {
     const artist = await prisma.artist.findFirst();
-    
+
     if (!artist) {
       return NextResponse.json(
         { error: "Artist not found" },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(artist);
   } catch (error) {
     console.error("Error fetching artist:", error);
@@ -27,7 +28,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const data = await request.json();
-    
+
     const {
       id,
       name,
@@ -39,8 +40,6 @@ export async function PUT(request: NextRequest) {
       youtubeUrl,
       spotifyUrl,
       twitterUrl,
-      youtubeEmbedUrl1,
-      youtubeEmbedUrl2,
     } = data;
 
     if (!id) {
@@ -62,10 +61,20 @@ export async function PUT(request: NextRequest) {
         youtubeUrl: youtubeUrl || null,
         spotifyUrl: spotifyUrl || null,
         twitterUrl: twitterUrl || null,
-        youtubeEmbedUrl1: youtubeEmbedUrl1 || null,
-        youtubeEmbedUrl2: youtubeEmbedUrl2 || null,
       },
     });
+
+    // Log the settings update action
+    const changedFields = Object.entries(data)
+      .filter(([key, value]) => key !== "id" && value !== undefined && value !== null && value !== "")
+      .map(([key]) => key)
+      .join(", ");
+
+    logAction(
+      "Sahadmin",
+      "UPDATE_SETTINGS",
+      `Updated artist settings: ${changedFields || "No changes"}`
+    );
 
     return NextResponse.json(updatedArtist);
   } catch (error) {
@@ -76,3 +85,4 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+

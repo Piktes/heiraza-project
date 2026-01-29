@@ -1,8 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
+import { logAdminAction } from "@/lib/audit-logger";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SignOutButton } from "@/components/admin/sign-out-button";
 import { VideoManager } from "@/components/admin/video-manager";
 import { TrackManager } from "@/components/admin/track-manager";
 import { GalleryManager } from "@/components/admin/gallery-manager";
@@ -15,6 +19,12 @@ import {
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+// Helper to get current username from session
+async function getCurrentUsername() {
+  const session = await getServerSession();
+  return (session?.user as any)?.username || "Unknown";
+}
 
 // ========================================
 // DATA FETCHING
@@ -34,8 +44,6 @@ async function getStats() {
 }
 
 async function getArtist() { return await prisma.artist.findFirst(); }
-async function getMessages() { return await prisma.message.findMany({ orderBy: { createdAt: "desc" }, take: 10 }); }
-async function getRecentSubscribers() { return await prisma.subscriber.findMany({ orderBy: { joinedAt: "desc" }, take: 5 }); }
 async function getAllVideos() { return await prisma.video.findMany({ orderBy: { sortOrder: "asc" } }); }
 async function getAllTracks() { return await prisma.track.findMany({ orderBy: { sortOrder: "asc" } }); }
 async function getAllGalleryImages() { return await prisma.galleryImage.findMany({ orderBy: { sortOrder: "asc" } }); }
@@ -51,32 +59,20 @@ async function getSiteSettings() {
 }
 
 // ========================================
-// SERVER ACTIONS - Messages
-// ========================================
-async function toggleMessageRead(formData: FormData) {
-  "use server";
-  const id = parseInt(formData.get("id") as string);
-  const currentStatus = formData.get("isRead") === "true";
-  await prisma.message.update({ where: { id }, data: { isRead: !currentStatus } });
-  revalidatePath("/admin");
-}
-
-async function deleteMessage(formData: FormData) {
-  "use server";
-  await prisma.message.delete({ where: { id: parseInt(formData.get("id") as string) } });
-  revalidatePath("/admin");
-}
-
-// ========================================
-// SERVER ACTIONS - Videos
+// SERVER ACTIONS - Videos (with Audit Logging)
 // ========================================
 async function addVideo(formData: FormData) {
   "use server";
   const title = formData.get("title") as string;
   const youtubeUrl = formData.get("youtubeUrl") as string;
   if (!youtubeUrl) return;
+  
   const lastVideo = await prisma.video.findFirst({ orderBy: { sortOrder: "desc" } });
-  await prisma.video.create({ data: { title: title || null, youtubeUrl, sortOrder: (lastVideo?.sortOrder || 0) + 1, isActive: true } });
+  const video = await prisma.video.create({ data: { title: title || null, youtubeUrl, sortOrder: (lastVideo?.sortOrder || 0) + 1, isActive: true } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "CREATE_VIDEO", `Added video: ${title || youtubeUrl}`);
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -85,31 +81,44 @@ async function toggleVideoActive(formData: FormData) {
   "use server";
   const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
-  await prisma.video.update({ where: { id }, data: { isActive: !currentStatus } });
+  const video = await prisma.video.update({ where: { id }, data: { isActive: !currentStatus } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "TOGGLE_VIDEO", `${!currentStatus ? "Enabled" : "Disabled"} video: ${video.title || video.youtubeUrl}`);
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 async function deleteVideo(formData: FormData) {
   "use server";
-  await prisma.video.delete({ where: { id: parseInt(formData.get("id") as string) } });
+  const id = parseInt(formData.get("id") as string);
+  const video = await prisma.video.findUnique({ where: { id } });
+  await prisma.video.delete({ where: { id } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "DELETE_VIDEO", `Deleted video: ${video?.title || video?.youtubeUrl}`, { level: "WARN" });
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 async function reorderVideos(orderedIds: number[]) {
   "use server";
-  // Lightweight payload - only IDs and new order positions
   const updates = orderedIds.map((id, index) =>
     prisma.video.update({ where: { id }, data: { sortOrder: index } })
   );
   await prisma.$transaction(updates);
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "REORDER_TRACK", `Reordered ${orderedIds.length} videos`);
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 // ========================================
-// SERVER ACTIONS - Tracks (Int ID, fileUrl/externalLink)
+// SERVER ACTIONS - Tracks (Int ID + Audit Logging)
 // ========================================
 async function addTrack(formData: FormData) {
   "use server";
@@ -128,7 +137,6 @@ async function addTrack(formData: FormData) {
   let finalExternalLink: string | null = externalLink || null;
   let finalCoverImage: string | null = null;
 
-  // Handle audio file upload
   if (audioFile && audioFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads", "audio");
     await mkdir(uploadsDir, { recursive: true });
@@ -142,7 +150,6 @@ async function addTrack(formData: FormData) {
 
   if (!fileUrl && !finalExternalLink) return { success: false, error: "Audio source required" };
 
-  // Handle cover image
   if (coverImageData && coverImageData.startsWith("data:image")) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads", "covers");
     await mkdir(uploadsDir, { recursive: true });
@@ -159,6 +166,9 @@ async function addTrack(formData: FormData) {
     data: { title, artist, fileUrl, externalLink: finalExternalLink, coverImage: finalCoverImage, sortOrder: (lastTrack?.sortOrder || 0) + 1, isActive: true },
   });
 
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "CREATE_TRACK", `Added track: ${title} by ${artist}`);
+
   revalidatePath("/admin");
   revalidatePath("/");
   return { success: true };
@@ -166,23 +176,33 @@ async function addTrack(formData: FormData) {
 
 async function toggleTrackActive(formData: FormData) {
   "use server";
-  const id = formData.get("id") as string;
+  const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
-  await prisma.track.update({ where: { id }, data: { isActive: !currentStatus } });
+  const track = await prisma.track.update({ where: { id }, data: { isActive: !currentStatus } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "TOGGLE_TRACK", `${!currentStatus ? "Enabled" : "Disabled"} track: ${track.title}`);
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 async function deleteTrack(formData: FormData) {
   "use server";
-  await prisma.track.delete({ where: { id: formData.get("id") as string } });
+  const id = parseInt(formData.get("id") as string);
+  const track = await prisma.track.findUnique({ where: { id } });
+  await prisma.track.delete({ where: { id } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "DELETE_TRACK", `Deleted track: ${track?.title}`, { level: "WARN" });
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 async function moveTrack(formData: FormData) {
   "use server";
-  const id = formData.get("id") as string;
+  const id = parseInt(formData.get("id") as string);
   const direction = formData.get("direction") as "up" | "down";
 
   const tracks = await prisma.track.findMany({ orderBy: { sortOrder: "asc" } });
@@ -204,19 +224,22 @@ async function moveTrack(formData: FormData) {
   revalidatePath("/");
 }
 
-async function reorderTracks(orderedIds: string[]) {
+async function reorderTracks(orderedIds: number[]) {
   "use server";
-  // Lightweight payload - only IDs and new order positions
   const updates = orderedIds.map((id, index) =>
     prisma.track.update({ where: { id }, data: { sortOrder: index } })
   );
   await prisma.$transaction(updates);
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "REORDER_TRACK", `Reordered ${orderedIds.length} tracks`);
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 // ========================================
-// SERVER ACTIONS - Gallery
+// SERVER ACTIONS - Gallery (with Audit Logging)
 // ========================================
 async function addGalleryImage(formData: FormData) {
   "use server";
@@ -243,6 +266,9 @@ async function addGalleryImage(formData: FormData) {
   await prisma.galleryImage.create({
     data: { imageUrl: `/uploads/gallery/${filename}`, title: title || null, caption: caption || null, category: category || null, sortOrder: (lastImage?.sortOrder || 0) + 1, isActive: true },
   });
+
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "CREATE_GALLERY_IMAGE", `Added gallery image: ${title || filename}`);
 
   revalidatePath("/admin");
   revalidatePath("/");
@@ -277,6 +303,9 @@ async function addMultipleGalleryImages(formData: FormData) {
     uploadedCount++;
   }
 
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "CREATE_GALLERY_IMAGES", `Batch uploaded ${uploadedCount} gallery images${category ? ` in category: ${category}` : ""}`);
+
   revalidatePath("/admin");
   revalidatePath("/");
   return { success: true, uploadedCount };
@@ -287,6 +316,10 @@ async function toggleGalleryImageActive(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
   await prisma.galleryImage.update({ where: { id }, data: { isActive: !currentStatus } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "TOGGLE_GALLERY_IMAGE", `${!currentStatus ? "Enabled" : "Disabled"} gallery image #${id}`);
+  
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -300,6 +333,9 @@ async function deleteGalleryImage(formData: FormData) {
   if (image) {
     if (image.imageUrl.startsWith("/uploads/")) { try { await unlink(path.join(process.cwd(), "public", image.imageUrl)); } catch { /* ignore */ } }
     await prisma.galleryImage.delete({ where: { id } });
+    
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "DELETE_GALLERY_IMAGE", `Deleted gallery image: ${image.title || image.imageUrl}`, { level: "WARN" });
   }
   revalidatePath("/admin");
   revalidatePath("/");
@@ -325,7 +361,7 @@ async function moveGalleryImage(formData: FormData) {
 }
 
 // ========================================
-// SERVER ACTIONS - Site Settings
+// SERVER ACTIONS - Site Settings (with Audit Logging)
 // ========================================
 async function toggleSetting(formData: FormData) {
   "use server";
@@ -335,7 +371,12 @@ async function toggleSetting(formData: FormData) {
   const currentValue = formData.get("currentValue") === "true";
   const allowedSettings = ["isAudioPlayerVisible", "isShopVisible", "isSocialLinksVisible", "isYoutubeVisible", "youtubeAutoScroll", "heroSliderEnabled", "heroKenBurnsEffect"];
   if (!allowedSettings.includes(settingName)) return { success: false };
+  
   await prisma.siteSettings.update({ where: { id: settings.id }, data: { [settingName]: !currentValue } });
+  
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "UPDATE_SITE_SETTING", `Changed ${settingName} from ${currentValue} to ${!currentValue}`);
+  
   revalidatePath("/");
   revalidatePath("/admin");
   return { success: true };
@@ -345,9 +386,16 @@ async function toggleSetting(formData: FormData) {
 // PAGE COMPONENT
 // ========================================
 export default async function AdminDashboard() {
-  const [stats, artist, messages, recentSubscribers, videos, tracks, galleryImages, siteSettings] = await Promise.all([
-    getStats(), getArtist(), getMessages(), getRecentSubscribers(), getAllVideos(), getAllTracks(), getAllGalleryImages(), getSiteSettings(),
+  const session = await getServerSession();
+  if (!session) {
+    redirect("/admin/login");
+  }
+
+  const [stats, artist, videos, tracks, galleryImages, siteSettings] = await Promise.all([
+    getStats(), getArtist(), getAllVideos(), getAllTracks(), getAllGalleryImages(), getSiteSettings(),
   ]);
+
+  const username = (session.user as any)?.username || session.user?.name || "Admin";
 
   return (
     <div className="min-h-screen gradient-warm-bg grain">
@@ -360,8 +408,16 @@ export default async function AdminDashboard() {
               <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground ml-2 px-2 py-1 bg-muted rounded-full">Admin</span>
             </Link>
             <div className="flex items-center gap-3">
+              {/* Show logged in user */}
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                Logged in as <span className="font-medium text-foreground">{username}</span>
+              </span>
               <ThemeToggle />
-              <Link href="/" target="_blank" className="btn-ghost flex items-center gap-2 text-sm">View Site <ArrowUpRight size={14} /></Link>
+              <Link href="/" target="_blank" className="btn-ghost flex items-center gap-2 text-sm">
+                View Site <ArrowUpRight size={14} />
+              </Link>
+              {/* Sign Out Button */}
+              <SignOutButton />
             </div>
           </div>
         </div>
@@ -375,55 +431,56 @@ export default async function AdminDashboard() {
         <main className="flex-1 space-y-8 pt-6">
           <div>
             <h1 className="font-display text-display-md tracking-wider uppercase">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Welcome back. Manage your content.</p>
+            <p className="text-muted-foreground mt-2">Welcome back, {username}. Manage your content.</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Link href="#tracks" className="glass-card p-5 hover-lift"><Music2 className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">{stats.tracksCount}</div><p className="text-muted-foreground text-sm">Tracks</p></Link>
             <Link href="#videos" className="glass-card p-5 hover-lift"><Youtube className="text-red-500 mb-2" size={20} /><div className="font-display text-3xl">{stats.videosCount}</div><p className="text-muted-foreground text-sm">Videos</p></Link>
-            <Link href="/admin/events/new" className="glass-card p-5 hover-lift"><Calendar className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">{stats.eventsCount}</div><p className="text-muted-foreground text-sm">Events</p></Link>
+            <Link href="/admin/events" className="glass-card p-5 hover-lift"><Calendar className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">{stats.eventsCount}</div><p className="text-muted-foreground text-sm">Events</p></Link>
             <Link href="/admin/products/new" className="glass-card p-5 hover-lift"><Package className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">{stats.productsCount}</div><p className="text-muted-foreground text-sm">Products</p></Link>
             <Link href="#gallery" className="glass-card p-5 hover-lift"><ImageIcon className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">{stats.galleryCount}</div><p className="text-muted-foreground text-sm">Gallery</p></Link>
             <Link href="/admin/social-media" className="glass-card p-5 hover-lift"><Share2 className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">8</div><p className="text-muted-foreground text-sm">Socials</p></Link>
             <Link href="/admin/messages" className="glass-card p-5 hover-lift"><MessageSquare className="text-accent-coral mb-2" size={20} /><div className="font-display text-3xl">{stats.messagesCount}</div><p className="text-muted-foreground text-sm">Messages</p></Link>
           </div>
 
-          <DashboardSection id="tracks">
+          <DashboardSection
+            id="tracks"
+            icon={<Music2 size={24} />}
+            title="Audio Player Tracks"
+            subtitle={`${tracks.filter(t => t.isActive).length} active / ${tracks.length} total • Drag to reorder`}
+          >
             <TrackManager tracks={tracks} onAdd={addTrack} onToggle={toggleTrackActive} onDelete={deleteTrack} onMove={moveTrack} onReorder={reorderTracks} />
           </DashboardSection>
-          <DashboardSection id="videos">
+          
+          <DashboardSection
+            id="videos"
+            icon={<Youtube size={24} className="text-red-500" />}
+            title="YouTube Videos"
+            subtitle={`${videos.filter(v => v.isActive).length} active / ${videos.length} total • Drag to reorder`}
+          >
             <VideoManager videos={videos} onAdd={addVideo} onToggle={toggleVideoActive} onDelete={deleteVideo} onReorder={reorderVideos} />
           </DashboardSection>
-          <DashboardSection id="gallery">
+          
+          <DashboardSection
+            id="gallery"
+            icon={<ImageIcon size={24} />}
+            title="Photo Gallery"
+            subtitle={`${galleryImages.filter(i => i.isActive).length} active / ${galleryImages.length} total`}
+          >
             <GalleryManager images={galleryImages} onAdd={addGalleryImage} onAddMultiple={addMultipleGalleryImages} onToggle={toggleGalleryImageActive} onDelete={deleteGalleryImage} onMove={moveGalleryImage} />
           </DashboardSection>
-          <DashboardSection id="settings">
+          
+          <DashboardSection
+            id="settings"
+            icon={<Settings size={24} />}
+            title="Site Settings"
+            subtitle="Control visibility of sections across your website"
+          >
             <SiteSettingsManager settings={siteSettings} onToggle={toggleSetting} />
           </DashboardSection>
+          
           <SectionOpener />
-
-          {artist && (
-            <div className="glass-card p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-2xl tracking-wide">Artist Profile</h2>
-                <Link href="/admin/settings" className="btn-ghost flex items-center gap-2 text-sm"><Settings size={16} /> Edit</Link>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="aspect-video rounded-2xl overflow-hidden bg-muted relative">{artist.heroImage && <Image src={artist.heroImage} alt="Hero" fill className="object-cover" />}</div>
-                <div className="lg:col-span-2"><h3 className="font-display text-xl mb-2">{artist.name}</h3><p className="text-muted-foreground line-clamp-3">{artist.bio}</p></div>
-              </div>
-            </div>
-          )}
-
-
-          <div className="glass-card p-8">
-            <h2 className="font-display text-2xl tracking-wide mb-6">Recent Subscribers</h2>
-            {recentSubscribers.length > 0 ? (
-              <div className="divide-y divide-border">
-                {recentSubscribers.map((sub) => (<div key={sub.id} className="py-4 flex items-center justify-between"><span className="font-medium">{sub.email}</span><span className="text-sm text-muted-foreground">{new Date(sub.joinedAt).toLocaleDateString()}</span></div>))}
-              </div>
-            ) : (<div className="py-10 text-center text-muted-foreground"><Users className="mx-auto mb-4" size={40} /><p>No subscribers yet</p></div>)}
-          </div>
         </main>
       </div>
     </div>

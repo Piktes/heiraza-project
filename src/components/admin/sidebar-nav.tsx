@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Home, Music2, Youtube, Calendar, Package, ImageIcon,
-    Bell, Share2, MessageSquare, Mail, ImagePlus, Settings, PenTool, FileText, Users,
+    Bell, Share2, MessageSquare, Mail, ImagePlus, Settings, PenTool, FileText, Users, ScrollText, Shield,
 } from "lucide-react";
 import { openSection } from "./dashboard-section";
 
@@ -16,8 +16,9 @@ interface NavItem {
     href: string;
     icon: React.ElementType;
     label: string;
-    sectionId?: string; // For hash-based sections on dashboard
+    sectionId?: string;
     badge?: number;
+    dividerBefore?: boolean;
 }
 
 export function SidebarNav({ unreadCount }: SidebarNavProps) {
@@ -40,48 +41,66 @@ export function SidebarNav({ unreadCount }: SidebarNavProps) {
         { href: "/admin/email-signature", icon: PenTool, label: "Email Signature" },
         { href: "/admin/subscribers", icon: Users, label: "Subscribers" },
         { href: "/admin/messages", icon: MessageSquare, label: "Messages", badge: unreadCount > 0 ? unreadCount : undefined },
+        // System section with divider
+        { href: "/admin/users", icon: Shield, label: "System Users", dividerBefore: true },
+        { href: "/admin/logs", icon: ScrollText, label: "System Logs" },
     ];
 
     const handleNavClick = (item: NavItem, e: React.MouseEvent) => {
         if (item.sectionId && pathname === "/admin") {
-            // Already on dashboard, just open and scroll to section
             e.preventDefault();
             openSection(item.sectionId);
         } else if (item.sectionId) {
-            // Will navigate to dashboard, then open section
-            // Store the section to open in sessionStorage
             sessionStorage.setItem("openSection", item.sectionId);
         }
     };
 
+    const isActive = (item: NavItem) => {
+        if (item.sectionId) {
+            return pathname === "/admin";
+        }
+        return pathname === item.href || pathname.startsWith(item.href + "/");
+    };
+
     return (
-        <nav className="space-y-2">
+        <nav className="space-y-1">
             {navItems.map((item, index) => {
                 const Icon = item.icon;
+                const active = index === 0 && pathname === "/admin" ? true : 
+                              (pathname === item.href && !item.sectionId);
 
                 return (
-                    <Link
-                        key={`${item.label}-${index}`}
-                        href={item.sectionId ? `/admin#${item.sectionId}` : item.href}
-                        onClick={(e) => handleNavClick(item, e)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${index === 0 && pathname === "/admin"
-                            ? "bg-accent-coral/10 text-accent-coral font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                            }`}
-                    >
-                        <span className="flex items-center gap-3">
-                            <Icon size={18} />
-                            <span>{item.label}</span>
-                        </span>
-                        {item.badge !== undefined && (
-                            <span className="bg-accent-coral text-white text-xs px-2 py-0.5 rounded-full">
-                                {item.badge}
-                            </span>
+                    <div key={`${item.label}-${index}`}>
+                        {/* Divider before system section */}
+                        {item.dividerBefore && (
+                            <div className="my-4 border-t border-border pt-4">
+                                <p className="px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                    System
+                                </p>
+                            </div>
                         )}
-                    </Link>
+                        <Link
+                            href={item.sectionId ? `/admin#${item.sectionId}` : item.href}
+                            onClick={(e) => handleNavClick(item, e)}
+                            className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
+                                active
+                                    ? "bg-accent-coral/10 text-accent-coral font-medium"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                            }`}
+                        >
+                            <span className="flex items-center gap-3">
+                                <Icon size={18} />
+                                <span>{item.label}</span>
+                            </span>
+                            {item.badge !== undefined && (
+                                <span className="bg-accent-coral text-white text-xs px-2 py-0.5 rounded-full">
+                                    {item.badge}
+                                </span>
+                            )}
+                        </Link>
+                    </div>
                 );
             })}
         </nav>
     );
 }
-

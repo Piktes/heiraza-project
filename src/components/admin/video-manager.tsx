@@ -234,25 +234,19 @@ export function VideoManager({ videos, onAdd, onToggle, onDelete, onReorder }: V
   const activeCount = localVideos.filter(v => v.isActive).length;
 
   return (
-    <div className="glass-card p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Youtube className="text-red-500" size={24} />
-          <div>
-            <h2 className="font-display text-2xl tracking-wide">YouTube Videos</h2>
-            <p className="text-sm text-muted-foreground">
-              {activeCount} active / {videos.length} total • Drag to reorder
-            </p>
-          </div>
+    <div className="p-6">
+      {/* Action button row */}
+      {!isAdding && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setIsAdding(true)}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <Plus size={16} />
+            Add Video
+          </button>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="btn-primary flex items-center gap-2 text-sm"
-        >
-          <Plus size={16} />
-          Add Video
-        </button>
-      </div>
+      )}
 
       {/* Add New Video Form */}
       {isAdding && (

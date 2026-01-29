@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { logAction } from "@/lib/logger";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BioEditor } from "@/components/admin/bio-editor";
 import { Music2, ArrowUpRight, Home, FileText } from "lucide-react";
@@ -26,6 +27,13 @@ async function saveBio(formData: FormData) {
             where: { id: artist.id },
             data: { bio },
         });
+
+        // Log the bio update action
+        logAction(
+            "Sahadmin",
+            "UPDATE_BIO",
+            `Updated artist biography (${bio.length} characters)`
+        );
     }
 
     revalidatePath("/admin/bio-editor");
@@ -55,6 +63,13 @@ async function addBioImage(formData: FormData) {
         },
     });
 
+    // Log the image addition
+    logAction(
+        "Sahadmin",
+        "ADD_BIO_IMAGE",
+        `Added bio image${caption ? `: "${caption}"` : ""}`
+    );
+
     revalidatePath("/admin/bio-editor");
 }
 
@@ -63,6 +78,14 @@ async function deleteBioImage(formData: FormData) {
     "use server";
     const id = parseInt(formData.get("id") as string);
     await prisma.bioImage.delete({ where: { id } });
+
+    // Log the image deletion
+    logAction(
+        "Sahadmin",
+        "DELETE_BIO_IMAGE",
+        `Deleted bio image ID: ${id}`
+    );
+
     revalidatePath("/admin/bio-editor");
 }
 

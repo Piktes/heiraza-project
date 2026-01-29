@@ -11,6 +11,46 @@ datasource db {
 }
 
 // ========================================
+// ADMIN USERS (Authentication)
+// ========================================
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(100)
+  passwordHash String    @db.VarChar(255)  // bcrypt hashed
+  email        String?   @db.VarChar(255)
+  role         String    @default("admin") @db.VarChar(50)
+  lastLoginAt  DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Relations
+  logs         SystemLog[]
+}
+
+// ========================================
+// SYSTEM LOGS (Audit Trail)
+// ========================================
+model SystemLog {
+  id          Int       @id @default(autoincrement())
+  level       String    @db.VarChar(10)   // INFO, WARN, ERROR
+  action      String    @db.VarChar(100)  // LOGIN, UPDATE_BIO, DELETE_TRACK, etc.
+  userId      Int?
+  username    String    @db.VarChar(100)
+  details     String?   @db.Text
+  ipAddress   String?   @db.VarChar(45)   // IPv6 support
+  userAgent   String?   @db.VarChar(500)
+  timestamp   DateTime  @default(now())
+  
+  // Relations
+  user        AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([timestamp])
+  @@index([action])
+  @@index([username])
+}
+
+// ========================================
 // SITE SETTINGS (Global Controls)
 // ========================================
 model SiteSettings {
@@ -58,9 +98,9 @@ model SiteSettings {
 // AUDIO TRACKS (Music Player)
 // ========================================
 model Track {
-  id           String   @id @default(cuid())
+  id           Int      @id @default(autoincrement())
   title        String   @db.VarChar(255)
-  artist       String   @db.VarChar(255)
+  artist       String?  @db.VarChar(255)
   fileUrl      String?  @db.VarChar(500)
   externalLink String?  @db.VarChar(500)
   coverImage   String?  @db.VarChar(500)
@@ -117,7 +157,7 @@ model Artist {
 model HeroImage {
   id        Int      @id @default(autoincrement())
   artistId  Int
-  imageUrl  String   @db.LongText  // LongText for Base64 images
+  imageUrl  String   @db.LongText
   altText   String?  @db.VarChar(255)
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
@@ -132,7 +172,7 @@ model HeroImage {
 model BioImage {
   id        Int      @id @default(autoincrement())
   artistId  Int
-  imageUrl  String   @db.LongText  // LongText for Base64 images
+  imageUrl  String   @db.LongText
   caption   String?  @db.VarChar(255)
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
@@ -164,8 +204,8 @@ model SpecialEvent {
 // ========================================
 model GalleryImage {
   id           Int      @id @default(autoincrement())
-  imageUrl     String   @db.LongText  // LongText for Base64 images
-  thumbnailUrl String?  @db.LongText  // LongText for Base64 thumbnails
+  imageUrl     String   @db.LongText
+  thumbnailUrl String?  @db.LongText
   title        String?  @db.VarChar(255)
   caption      String?  @db.Text
   category     String?  @db.VarChar(100)
@@ -248,18 +288,6 @@ model Message {
   countryCode String?  @db.VarChar(5)
   createdAt   DateTime @default(now())
   isRead      Boolean  @default(false)
-}
-
-// ========================================
-// ADMIN USERS
-// ========================================
-model Admin {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique @db.VarChar(100)
-  password  String   @db.VarChar(255)
-  email     String?  @db.VarChar(255)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 // ========================================

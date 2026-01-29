@@ -1,11 +1,8 @@
-import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { MessagesList } from "@/components/admin/messages-list";
-import {
-    Music2, ArrowUpRight, Home, MessageSquare, Search, Eye, Filter,
-} from "lucide-react";
+import { InfoBar } from "@/components/admin/info-bar";
+import { MessageSquare, Search, Eye, Filter } from "lucide-react";
 
 async function getMessages(search?: string, sortBy?: string, showUnread?: boolean) {
     const where: { isRead?: boolean; OR?: any[] } = {};
@@ -93,30 +90,11 @@ export default async function MessagesPage({
     ]);
 
     return (
-        <div className="min-h-screen gradient-warm-bg grain">
-            <header className="sticky top-0 z-50 px-4 py-4">
-                <div className="max-w-7xl mx-auto">
-                    <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-                        <Link href="/admin" className="flex items-center gap-2">
-                            <Music2 size={24} className="text-accent-coral" />
-                            <span className="font-display text-xl tracking-widest uppercase">{artist?.name || "Heiraza"}</span>
-                            <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground ml-2 px-2 py-1 bg-muted rounded-full">Admin</span>
-                        </Link>
-                        <div className="flex items-center gap-3">
-                            <ThemeToggle />
-                            <Link href="/" target="_blank" className="btn-ghost flex items-center gap-2 text-sm">View Site <ArrowUpRight size={14} /></Link>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar counter={`${stats.unread} unread`} />
 
             <div className="max-w-7xl mx-auto px-4 pb-10">
-                {/* Back Link */}
-                <Link href="/admin" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
-                    <Home size={16} />
-                    <span>Back to Dashboard</span>
-                </Link>
-
                 {/* Page Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>

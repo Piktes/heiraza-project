@@ -90,7 +90,7 @@ export async function addTrack(formData: FormData) {
 // UPDATE TRACK
 // ========================================
 export async function updateTrack(formData: FormData) {
-  const id = formData.get("id") as string;
+  const id = parseInt(formData.get("id") as string);
   const title = formData.get("title") as string;
   const artist = formData.get("artist") as string;
   const fileUrl = formData.get("fileUrl") as string;
@@ -135,7 +135,7 @@ export async function updateTrack(formData: FormData) {
 // TOGGLE TRACK ACTIVE STATUS
 // ========================================
 export async function toggleTrackActive(formData: FormData) {
-  const id = formData.get("id") as string;
+  const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
 
   await prisma.track.update({
@@ -153,7 +153,7 @@ export async function toggleTrackActive(formData: FormData) {
 // DELETE TRACK
 // ========================================
 export async function deleteTrack(formData: FormData) {
-  const id = formData.get("id") as string;
+  const id = parseInt(formData.get("id") as string);
 
   await prisma.track.delete({
     where: { id },

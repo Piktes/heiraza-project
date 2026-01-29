@@ -1,8 +1,7 @@
 import { revalidatePath } from "next/cache";
-import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { PopupManager } from "@/components/admin/popup-manager";
-import { ArrowLeft, Bell } from "lucide-react";
+import { InfoBar } from "@/components/admin/info-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -165,29 +164,14 @@ async function updatePopup(formData: FormData) {
 // ========================================
 export default async function PopupsPage() {
     const popups = await getPopups();
+    const activeCount = popups.filter(p => p.isActive).length;
 
     return (
-        <div className="min-h-screen gradient-warm-bg grain">
-            {/* Header */}
-            <header className="sticky top-0 z-50 px-4 py-4">
-                <div className="max-w-5xl mx-auto">
-                    <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-                        <Link
-                            href="/admin"
-                            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ArrowLeft size={18} />
-                            <span>Back to Dashboard</span>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            <Bell className="text-accent-coral" size={20} />
-                            <span className="font-medium">{popups.length} popups</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar counter={`${activeCount}/${popups.length} active`} />
 
-            <main className="max-w-5xl mx-auto px-4 pb-10 pt-6">
+            <main className="max-w-5xl mx-auto px-4 pb-10">
                 <div className="mb-8">
                     <h1 className="font-display text-display-md tracking-wider uppercase">Popup Manager</h1>
                     <p className="text-muted-foreground mt-2">Create and schedule promotional popups for your website.</p>

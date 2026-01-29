@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    ArrowLeft, Calendar, MapPin, Plus, Trash2, Edit2, Eye, EyeOff,
+    Calendar, MapPin, Plus, Trash2, Edit2, Eye, EyeOff,
     Loader2, ExternalLink, TicketIcon, AlertCircle
 } from "lucide-react";
+import { InfoBar } from "@/components/admin/info-bar";
 
 interface Event {
     id: number;
@@ -137,35 +138,26 @@ export default function EventsPage() {
     const pastEvents = events.filter(e => isPastEvent(e.date));
 
     return (
-        <div className="min-h-screen gradient-warm-bg grain">
-            {/* Header */}
-            <header className="sticky top-0 z-50 px-4 py-4">
-                <div className="max-w-5xl mx-auto">
-                    <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-                        <Link
-                            href="/admin"
-                            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ArrowLeft size={18} />
-                            <span>Back to Dashboard</span>
-                        </Link>
-                        <Link
-                            href="/admin/events/new"
-                            className="btn-primary flex items-center gap-2 text-sm"
-                        >
-                            <Plus size={16} />
-                            Add Event
-                        </Link>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar counter={`${upcomingEvents.length} upcoming, ${pastEvents.length} past`} />
 
-            <main className="max-w-5xl mx-auto px-4 pb-10 pt-6">
-                <div className="mb-8">
-                    <h1 className="font-display text-display-md tracking-wider uppercase">Events</h1>
-                    <p className="text-muted-foreground mt-2">
-                        Manage concerts, tours, and shows. {upcomingEvents.length} upcoming, {pastEvents.length} past.
-                    </p>
+            <main className="max-w-5xl mx-auto px-4 pb-10">
+                {/* Page Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="font-display text-display-md tracking-wider uppercase">Events</h1>
+                        <p className="text-muted-foreground mt-2">
+                            Manage concerts, tours, and shows.
+                        </p>
+                    </div>
+                    <Link
+                        href="/admin/events/new"
+                        className="btn-primary flex items-center gap-2 text-sm"
+                    >
+                        <Plus size={16} />
+                        Add Event
+                    </Link>
                 </div>
 
                 {message && (

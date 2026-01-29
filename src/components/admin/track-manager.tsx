@@ -1,11 +1,30 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   Music2, Plus, Trash2, GripVertical, Eye, EyeOff,
-  Upload, Link as LinkIcon, X, ArrowUp, ArrowDown
+  Upload, Link as LinkIcon, X
 } from "lucide-react";
+
+// dnd-kit imports
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Track {
   id: number;
@@ -27,6 +46,103 @@ interface TrackManagerProps {
   onReorder?: (orderedIds: number[]) => Promise<any>;
 }
 
+// Sortable Track Item Component
+function SortableTrackItem({
+  track,
+  index,
+  onToggleClick,
+  onDelete,
+}: {
+  track: Track;
+  index: number;
+  onToggleClick: (id: number, currentStatus: boolean) => void;
+  onDelete: (formData: FormData) => Promise<any>;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: track.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    touchAction: "none" as const,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : "auto" as const,
+  };
+
+  const getAudioSrc = () => track.fileUrl || track.externalLink || "";
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${track.isActive
+          ? "bg-background/50 border-border"
+          : "bg-muted/30 border-muted opacity-60"
+        } ${isDragging ? "shadow-lg ring-2 ring-accent-coral/50" : ""}`}
+    >
+      {/* Index Number */}
+      <span className="text-neutral-400 font-mono text-sm w-6 text-center flex-shrink-0">
+        {index + 1}
+      </span>
+
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="text-muted-foreground cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+      >
+        <GripVertical size={18} />
+      </div>
+
+      {/* Cover */}
+      <div className="w-16 h-16 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex-shrink-0">
+        {track.coverImage ? (
+          <Image src={track.coverImage} alt={track.title} width={64} height={64} className="object-cover w-full h-full" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Music2 size={24} className="text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium truncate">{track.title}</p>
+        <p className="text-sm text-muted-foreground truncate">{track.artist || "Heiraza"}</p>
+        <p className="text-xs text-muted-foreground/60 truncate">{getAudioSrc()}</p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onToggleClick(track.id, track.isActive)}
+          className={`p-2 rounded-lg transition-colors ${track.isActive
+              ? "hover:bg-muted text-accent-coral"
+              : "hover:bg-muted text-muted-foreground"
+            }`}
+          title={track.isActive ? "Deactivate track" : "Activate track"}
+        >
+          {track.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
+        </button>
+
+        <form action={onDelete}>
+          <input type="hidden" name="id" value={track.id} />
+          <button type="submit" className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 transition-colors" title="Delete track">
+            <Trash2 size={18} className="text-red-500" />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReorder }: TrackManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [inputMethod, setInputMethod] = useState<"upload" | "url">("url");
@@ -35,11 +151,46 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
   const [newUrl, setNewUrl] = useState("");
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localTracks, setLocalTracks] = useState(tracks);
 
   const audioFileRef = useRef<HTMLInputElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
 
-  const activeCount = tracks.filter(t => t.isActive).length;
+  // Sync local tracks when props change
+  useEffect(() => {
+    setLocalTracks(tracks);
+  }, [tracks]);
+
+  // Configure dnd-kit sensors with activation constraint
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Prevents click vs drag confusion
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end - reorder tracks
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localTracks.findIndex((t) => t.id === active.id);
+      const newIndex = localTracks.findIndex((t) => t.id === over.id);
+
+      const newOrder = arrayMove(localTracks, oldIndex, newIndex);
+      setLocalTracks(newOrder);
+
+      // Call reorder API with just the IDs
+      if (onReorder) {
+        const orderedIds = newOrder.map((t) => t.id);
+        await onReorder(orderedIds);
+      }
+    }
+  };
 
   const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,7 +242,28 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
     if (coverFileRef.current) coverFileRef.current.value = "";
   };
 
-  const getAudioSrc = (track: Track) => track.fileUrl || track.externalLink || "";
+  // Optimistic toggle handler
+  const handleToggleClick = async (id: number, currentStatus: boolean) => {
+    // Optimistically update local state immediately
+    setLocalTracks(prev =>
+      prev.map(t => t.id === id ? { ...t, isActive: !currentStatus } : t)
+    );
+
+    // Call server action
+    const formData = new FormData();
+    formData.set("id", id.toString());
+    formData.set("isActive", currentStatus.toString());
+
+    try {
+      await onToggle(formData);
+    } catch (error) {
+      // Revert on failure
+      setLocalTracks(prev =>
+        prev.map(t => t.id === id ? { ...t, isActive: currentStatus } : t)
+      );
+      console.error("Failed to toggle track visibility:", error);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -228,72 +400,30 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
         </div>
       )}
 
-      {/* Track List */}
-      {tracks.length > 0 ? (
-        <div className="space-y-3">
-          {tracks.map((track) => (
-            <div
-              key={track.id}
-              className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${track.isActive ? "bg-background/50 border-border" : "bg-muted/30 border-muted opacity-60"}`}
-            >
-              <div className="text-muted-foreground cursor-grab">
-                <GripVertical size={18} />
-              </div>
-
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex-shrink-0">
-                {track.coverImage ? (
-                  <Image src={track.coverImage} alt={track.title} width={64} height={64} className="object-cover w-full h-full" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Music2 size={24} className="text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{track.title}</p>
-                <p className="text-sm text-muted-foreground truncate">{track.artist || "Heiraza"}</p>
-                <p className="text-xs text-muted-foreground/60 truncate">{getAudioSrc(track)}</p>
-              </div>
-
-              <div className="flex items-center gap-1">
-                {onMove && (
-                  <>
-                    <form action={onMove}>
-                      <input type="hidden" name="id" value={track.id} />
-                      <input type="hidden" name="direction" value="up" />
-                      <button type="submit" className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors" title="Move up">
-                        <ArrowUp size={18} />
-                      </button>
-                    </form>
-                    <form action={onMove}>
-                      <input type="hidden" name="id" value={track.id} />
-                      <input type="hidden" name="direction" value="down" />
-                      <button type="submit" className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors" title="Move down">
-                        <ArrowDown size={18} />
-                      </button>
-                    </form>
-                  </>
-                )}
-
-                <form action={onToggle}>
-                  <input type="hidden" name="id" value={track.id} />
-                  <input type="hidden" name="isActive" value={track.isActive.toString()} />
-                  <button type="submit" className={`p-2 rounded-lg transition-colors ${track.isActive ? "hover:bg-muted text-accent-coral" : "hover:bg-muted text-muted-foreground"}`} title={track.isActive ? "Deactivate track" : "Activate track"}>
-                    {track.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
-                  </button>
-                </form>
-
-                <form action={onDelete}>
-                  <input type="hidden" name="id" value={track.id} />
-                  <button type="submit" className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 transition-colors" title="Delete track">
-                    <Trash2 size={18} className="text-red-500" />
-                  </button>
-                </form>
-              </div>
+      {/* Track List with Drag & Drop */}
+      {localTracks.length > 0 ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={localTracks.map((t) => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-3">
+              {localTracks.map((track, index) => (
+                <SortableTrackItem
+                  key={track.id}
+                  track={track}
+                  index={index}
+                  onToggleClick={handleToggleClick}
+                  onDelete={onDelete}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="text-center py-10 text-muted-foreground">
           <Music2 className="mx-auto mb-4" size={40} />
@@ -301,6 +431,16 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
           <p className="text-sm mt-1">Add your first track above</p>
         </div>
       )}
+
+      {/* Tips */}
+      <div className="mt-6 p-4 rounded-xl bg-muted/50 text-sm text-muted-foreground">
+        <p className="font-medium text-foreground mb-1">Tips:</p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>Tracks with <Eye size={12} className="inline text-accent-coral" /> are visible on the homepage</li>
+          <li><strong>Drag handles</strong> to reorder tracks</li>
+          <li>Changes are saved automatically after reordering</li>
+        </ul>
+      </div>
     </div>
   );
 }

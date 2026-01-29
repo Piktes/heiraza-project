@@ -66,13 +66,13 @@ async function addVideo(formData: FormData) {
   const title = formData.get("title") as string;
   const youtubeUrl = formData.get("youtubeUrl") as string;
   if (!youtubeUrl) return;
-  
+
   const lastVideo = await prisma.video.findFirst({ orderBy: { sortOrder: "desc" } });
   const video = await prisma.video.create({ data: { title: title || null, youtubeUrl, sortOrder: (lastVideo?.sortOrder || 0) + 1, isActive: true } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "CREATE_VIDEO", `Added video: ${title || youtubeUrl}`);
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -82,10 +82,10 @@ async function toggleVideoActive(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
   const video = await prisma.video.update({ where: { id }, data: { isActive: !currentStatus } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "TOGGLE_VIDEO", `${!currentStatus ? "Enabled" : "Disabled"} video: ${video.title || video.youtubeUrl}`);
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -95,10 +95,10 @@ async function deleteVideo(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const video = await prisma.video.findUnique({ where: { id } });
   await prisma.video.delete({ where: { id } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "DELETE_VIDEO", `Deleted video: ${video?.title || video?.youtubeUrl}`, { level: "WARN" });
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -109,10 +109,10 @@ async function reorderVideos(orderedIds: number[]) {
     prisma.video.update({ where: { id }, data: { sortOrder: index } })
   );
   await prisma.$transaction(updates);
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "REORDER_TRACK", `Reordered ${orderedIds.length} videos`);
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -179,10 +179,10 @@ async function toggleTrackActive(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
   const track = await prisma.track.update({ where: { id }, data: { isActive: !currentStatus } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "TOGGLE_TRACK", `${!currentStatus ? "Enabled" : "Disabled"} track: ${track.title}`);
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -192,10 +192,10 @@ async function deleteTrack(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const track = await prisma.track.findUnique({ where: { id } });
   await prisma.track.delete({ where: { id } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "DELETE_TRACK", `Deleted track: ${track?.title}`, { level: "WARN" });
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -230,10 +230,10 @@ async function reorderTracks(orderedIds: number[]) {
     prisma.track.update({ where: { id }, data: { sortOrder: index } })
   );
   await prisma.$transaction(updates);
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "REORDER_TRACK", `Reordered ${orderedIds.length} tracks`);
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -316,10 +316,10 @@ async function toggleGalleryImageActive(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
   await prisma.galleryImage.update({ where: { id }, data: { isActive: !currentStatus } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "TOGGLE_GALLERY_IMAGE", `${!currentStatus ? "Enabled" : "Disabled"} gallery image #${id}`);
-  
+
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -333,7 +333,7 @@ async function deleteGalleryImage(formData: FormData) {
   if (image) {
     if (image.imageUrl.startsWith("/uploads/")) { try { await unlink(path.join(process.cwd(), "public", image.imageUrl)); } catch { /* ignore */ } }
     await prisma.galleryImage.delete({ where: { id } });
-    
+
     const username = await getCurrentUsername();
     await logAdminAction(username, "DELETE_GALLERY_IMAGE", `Deleted gallery image: ${image.title || image.imageUrl}`, { level: "WARN" });
   }
@@ -371,12 +371,12 @@ async function toggleSetting(formData: FormData) {
   const currentValue = formData.get("currentValue") === "true";
   const allowedSettings = ["isAudioPlayerVisible", "isShopVisible", "isSocialLinksVisible", "isYoutubeVisible", "youtubeAutoScroll", "heroSliderEnabled", "heroKenBurnsEffect"];
   if (!allowedSettings.includes(settingName)) return { success: false };
-  
+
   await prisma.siteSettings.update({ where: { id: settings.id }, data: { [settingName]: !currentValue } });
-  
+
   const username = await getCurrentUsername();
   await logAdminAction(username, "UPDATE_SITE_SETTING", `Changed ${settingName} from ${currentValue} to ${!currentValue}`);
-  
+
   revalidatePath("/");
   revalidatePath("/admin");
   return { success: true };
@@ -398,32 +398,8 @@ export default async function AdminDashboard() {
   const username = (session.user as any)?.username || session.user?.name || "Admin";
 
   return (
-    <div className="min-h-screen gradient-warm-bg grain">
-      <header className="sticky top-0 z-50 px-4 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-            <Link href="/admin" className="flex items-center gap-2">
-              <Music2 size={24} className="text-accent-coral" />
-              <span className="font-display text-xl tracking-widest uppercase">{artist?.name || "Heiraza"}</span>
-              <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground ml-2 px-2 py-1 bg-muted rounded-full">Admin</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              {/* Show logged in user */}
-              <span className="text-sm text-muted-foreground hidden sm:block">
-                Logged in as <span className="font-medium text-foreground">{username}</span>
-              </span>
-              <ThemeToggle />
-              <Link href="/" target="_blank" className="btn-ghost flex items-center gap-2 text-sm">
-                View Site <ArrowUpRight size={14} />
-              </Link>
-              {/* Sign Out Button */}
-              <SignOutButton />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex max-w-7xl mx-auto px-4 pb-10">
+    <div className="min-h-screen">
+      <div className="flex max-w-7xl mx-auto px-4 pb-10 pt-6">
         <aside className="w-64 shrink-0 pr-6 hidden lg:block sticky top-24 h-fit">
           <SidebarNav unreadCount={stats.unreadCount} />
         </aside>
@@ -452,7 +428,7 @@ export default async function AdminDashboard() {
           >
             <TrackManager tracks={tracks} onAdd={addTrack} onToggle={toggleTrackActive} onDelete={deleteTrack} onMove={moveTrack} onReorder={reorderTracks} />
           </DashboardSection>
-          
+
           <DashboardSection
             id="videos"
             icon={<Youtube size={24} className="text-red-500" />}
@@ -461,7 +437,7 @@ export default async function AdminDashboard() {
           >
             <VideoManager videos={videos} onAdd={addVideo} onToggle={toggleVideoActive} onDelete={deleteVideo} onReorder={reorderVideos} />
           </DashboardSection>
-          
+
           <DashboardSection
             id="gallery"
             icon={<ImageIcon size={24} />}
@@ -470,7 +446,7 @@ export default async function AdminDashboard() {
           >
             <GalleryManager images={galleryImages} onAdd={addGalleryImage} onAddMultiple={addMultipleGalleryImages} onToggle={toggleGalleryImageActive} onDelete={deleteGalleryImage} onMove={moveGalleryImage} />
           </DashboardSection>
-          
+
           <DashboardSection
             id="settings"
             icon={<Settings size={24} />}
@@ -479,7 +455,7 @@ export default async function AdminDashboard() {
           >
             <SiteSettingsManager settings={siteSettings} onToggle={toggleSetting} />
           </DashboardSection>
-          
+
           <SectionOpener />
         </main>
       </div>

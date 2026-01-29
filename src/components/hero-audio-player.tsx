@@ -5,9 +5,9 @@ import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2 } from "lucide-react";
 
 interface Track {
-  id: string;
+  id: number;
   title: string;
-  artist: string;
+  artist: string | null;
   fileUrl?: string | null;
   externalLink?: string | null;
   coverImage?: string | null;

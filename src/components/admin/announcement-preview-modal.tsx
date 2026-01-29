@@ -200,7 +200,7 @@ export function AnnouncementPreviewModal({
                         className="w-full sm:w-auto btn-secondary"
                         disabled={isLoading || isSending}
                     >
-                        İptal (Cancel)
+                        Cancel
                     </button>
                     <button
                         onClick={handleSaveOnly}
@@ -212,7 +212,7 @@ export function AnnouncementPreviewModal({
                         ) : (
                             <Save size={16} />
                         )}
-                        Yalnızca Kaydet (Save Only)
+                        Save Only
                     </button>
                     <button
                         onClick={handleConfirmAndSend}
@@ -227,7 +227,7 @@ export function AnnouncementPreviewModal({
                         ) : (
                             <>
                                 <Send size={16} />
-                                Onayla ve Gönder (Confirm & Send)
+                                Confirm & Send
                             </>
                         )}
                     </button>

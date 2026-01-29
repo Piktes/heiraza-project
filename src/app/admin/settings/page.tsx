@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Loader2, Youtube, Image as ImageIcon } from "lucide-react";
+import { Save, Loader2, Youtube, Image as ImageIcon } from "lucide-react";
 import { ImageUploadWithCrop } from "@/components/image-upload-with-crop";
 import { SocialIcon } from "@/components/social-icons";
+import { InfoBar } from "@/components/admin/info-bar";
 
 interface Artist {
   id: number;
@@ -94,17 +95,17 @@ export default function SettingsPage() {
     try {
       // If there's a new hero image, upload it first
       let heroImageUrl = formData.heroImage;
-      
+
       if (heroImageData) {
         const uploadRes = await fetch("/api/admin/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            image: heroImageData, 
-            folder: "hero" 
+          body: JSON.stringify({
+            image: heroImageData,
+            folder: "hero"
           }),
         });
-        
+
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
           heroImageUrl = uploadData.url;
@@ -132,9 +133,9 @@ export default function SettingsPage() {
         throw new Error("Failed to save settings");
       }
     } catch (error) {
-      setMessage({ 
-        type: "error", 
-        text: error instanceof Error ? error.message : "Failed to save settings" 
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to save settings"
       });
     } finally {
       setIsSaving(false);
@@ -150,34 +151,21 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-warm-bg grain">
-      {/* Header */}
-      <header className="sticky top-0 z-50 px-4 py-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={18} />
-              <span>Back to Dashboard</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen">
+      {/* InfoBar */}
+      <InfoBar />
 
-      <main className="max-w-4xl mx-auto px-4 pb-10 pt-6">
+      <main className="max-w-4xl mx-auto px-4 pb-10">
         <div className="mb-8">
           <h1 className="font-display text-display-md tracking-wider uppercase">Settings</h1>
           <p className="text-muted-foreground mt-2">Manage your artist profile, social links, and featured content</p>
         </div>
 
         {message && (
-          <div className={`mb-6 p-4 rounded-xl ${
-            message.type === "success" 
-              ? "bg-green-500/10 border border-green-500/20 text-green-600" 
-              : "bg-red-500/10 border border-red-500/20 text-red-600"
-          }`}>
+          <div className={`mb-6 p-4 rounded-xl ${message.type === "success"
+            ? "bg-green-500/10 border border-green-500/20 text-green-600"
+            : "bg-red-500/10 border border-red-500/20 text-red-600"
+            }`}>
             {message.text}
           </div>
         )}
@@ -191,7 +179,7 @@ export default function SettingsPage() {
               <ImageIcon className="text-accent-coral" size={24} />
               <h2 className="font-display text-2xl tracking-wide">Hero Image</h2>
             </div>
-            
+
             <ImageUploadWithCrop
               aspect={16 / 9}
               currentImage={heroImageData || formData.heroImage || null}
@@ -207,7 +195,7 @@ export default function SettingsPage() {
               ======================================== */}
           <div className="glass-card p-8">
             <h2 className="font-display text-2xl tracking-wide mb-6">Basic Info</h2>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium mb-2">Artist Name</label>
@@ -249,7 +237,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground">These videos will be displayed on your homepage</p>
               </div>
             </div>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -289,7 +277,7 @@ export default function SettingsPage() {
               ======================================== */}
           <div className="glass-card p-8">
             <h2 className="font-display text-2xl tracking-wide mb-6">Social Media Links</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium mb-2">

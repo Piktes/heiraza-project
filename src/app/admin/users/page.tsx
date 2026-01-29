@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft, Users, Plus, Trash2, Loader2, CheckCircle,
+  Users, Plus, Trash2, Loader2, CheckCircle,
   User, Mail, Shield, Clock, AlertCircle, Eye, EyeOff, X
 } from "lucide-react";
+import { InfoBar } from "@/components/admin/info-bar";
 
 interface AdminUser {
   id: number;
@@ -21,7 +21,7 @@ export default function SystemUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Add user form
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUsername, setNewUsername] = useState("");
@@ -149,18 +149,17 @@ export default function SystemUsersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="p-2 rounded-lg hover:bg-muted transition-colors">
-              <ArrowLeft size={20} />
-            </Link>
-            <div>
-              <h1 className="font-display text-xl tracking-wide uppercase">System Users</h1>
-              <p className="text-sm text-muted-foreground">Manage admin accounts</p>
-            </div>
+    <div className="min-h-screen">
+      {/* InfoBar */}
+      <InfoBar counter={`${users.length} users`} />
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 pb-10">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-display text-display-md tracking-wider uppercase">System Users</h1>
+            <p className="text-muted-foreground mt-2">Manage admin accounts</p>
           </div>
 
           <button
@@ -171,9 +170,7 @@ export default function SystemUsersPage() {
             <span>Add User</span>
           </button>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Add User Modal */}
         {showAddForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -314,9 +311,8 @@ export default function SystemUsersPage() {
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className={`flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors ${
-                    !user.isActive ? "opacity-50" : ""
-                  }`}
+                  className={`flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors ${!user.isActive ? "opacity-50" : ""
+                    }`}
                 >
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-full bg-accent-coral/10 flex items-center justify-center flex-shrink-0">
@@ -354,11 +350,10 @@ export default function SystemUsersPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleToggleActive(user.id, user.isActive)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        user.isActive
-                          ? "hover:bg-yellow-500/10 text-yellow-500"
-                          : "hover:bg-green-500/10 text-green-500"
-                      }`}
+                      className={`p-2 rounded-lg transition-colors ${user.isActive
+                        ? "hover:bg-yellow-500/10 text-yellow-500"
+                        : "hover:bg-green-500/10 text-green-500"
+                        }`}
                       title={user.isActive ? "Disable user" : "Enable user"}
                     >
                       {user.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -388,7 +383,7 @@ export default function SystemUsersPage() {
             <li>The last active admin account cannot be deleted</li>
           </ul>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

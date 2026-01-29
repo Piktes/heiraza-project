@@ -1,9 +1,7 @@
 import { revalidatePath } from "next/cache";
-import Link from "next/link";
-import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { HeroImageManager } from "@/components/admin/hero-image-manager";
-import { ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { InfoBar } from "@/components/admin/info-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -190,28 +188,14 @@ export default async function HeroEditorPage() {
         getArtist(),
     ]);
 
-    return (
-        <div className="min-h-screen gradient-warm-bg grain">
-            {/* Header */}
-            <header className="sticky top-0 z-50 px-4 py-4">
-                <div className="max-w-5xl mx-auto">
-                    <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-                        <Link
-                            href="/admin"
-                            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ArrowLeft size={18} />
-                            <span>Back to Dashboard</span>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            <ImageIcon className="text-accent-coral" size={20} />
-                            <span className="font-medium">{heroImages.length} images</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
+    const activeCount = heroImages.filter(img => img.isActive).length;
 
-            <main className="max-w-5xl mx-auto px-4 pb-10 pt-6">
+    return (
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar counter={`${activeCount}/${heroImages.length} active`} />
+
+            <main className="max-w-5xl mx-auto px-4 pb-10">
                 <div className="mb-8">
                     <h1 className="font-display text-display-md tracking-wider uppercase">Hero Editor</h1>
                     <p className="text-muted-foreground mt-2">Manage hero slider images. Drag to reorder or use arrows.</p>

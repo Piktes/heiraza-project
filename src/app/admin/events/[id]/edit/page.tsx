@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Calendar, MapPin, Ticket, Save, Loader2, Send, Mail } from "lucide-react";
+import { Calendar, MapPin, Ticket, Save, Loader2, Send, Mail } from "lucide-react";
 import { ImageUploadWithCrop } from "@/components/image-upload-with-crop";
 import { AnnouncementPreviewModal } from "@/components/admin/announcement-preview-modal";
+import { InfoBar } from "@/components/admin/info-bar";
 
 interface Event {
     id: number;
@@ -215,23 +216,11 @@ export default function EditEventPage() {
     }
 
     return (
-        <div className="min-h-screen gradient-warm-bg grain">
-            {/* Header */}
-            <header className="sticky top-0 z-50 px-4 py-4">
-                <div className="max-w-4xl mx-auto">
-                    <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-                        <Link
-                            href="/admin/events"
-                            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ArrowLeft size={18} />
-                            <span>Back to Events</span>
-                        </Link>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar backHref="/admin/events" backLabel="Back to Events" />
 
-            <main className="max-w-4xl mx-auto px-4 pb-10 pt-6">
+            <main className="max-w-4xl mx-auto px-4 pb-10">
                 <div className="mb-8">
                     <h1 className="font-display text-display-md tracking-wider uppercase">Edit Event</h1>
                     <p className="text-muted-foreground mt-2">Update event details</p>

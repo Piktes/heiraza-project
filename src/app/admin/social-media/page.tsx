@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-    ArrowLeft, Save, Loader2, Share2, Eye, EyeOff, Trash2, Plus, Edit2, X, Check
-} from "lucide-react";
+import { Loader2, Share2, Eye, EyeOff, Trash2, Edit2, X, Check } from "lucide-react";
 import { SocialIcon } from "@/components/social-icons";
+import { InfoBar } from "@/components/admin/info-bar";
 
 interface SocialLinks {
     facebookUrl: string;
@@ -159,27 +157,11 @@ export default function SocialMediaPage() {
     }
 
     return (
-        <div className="min-h-screen gradient-warm-bg grain">
-            {/* Header */}
-            <header className="sticky top-0 z-50 px-4 py-4">
-                <div className="max-w-4xl mx-auto">
-                    <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
-                        <Link
-                            href="/admin"
-                            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ArrowLeft size={18} />
-                            <span>Back to Dashboard</span>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            {isSaving && <Loader2 size={16} className="animate-spin text-accent-coral" />}
-                            <span className="text-sm font-medium">{activeCount} / 8 active</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar counter={`${activeCount}/8 active`} />
 
-            <main className="max-w-4xl mx-auto px-4 pb-10 pt-6">
+            <main className="max-w-4xl mx-auto px-4 pb-10">
                 <div className="mb-8">
                     <h1 className="font-display text-display-md tracking-wider uppercase">Social Media</h1>
                     <p className="text-muted-foreground mt-2">Manage your social media links. Active links appear on your website.</p>
@@ -187,8 +169,8 @@ export default function SocialMediaPage() {
 
                 {message && (
                     <div className={`mb-6 p-4 rounded-xl ${message.type === "success"
-                            ? "bg-green-500/10 border border-green-500/20 text-green-600"
-                            : "bg-red-500/10 border border-red-500/20 text-red-600"
+                        ? "bg-green-500/10 border border-green-500/20 text-green-600"
+                        : "bg-red-500/10 border border-red-500/20 text-red-600"
                         }`}>
                         {message.text}
                     </div>
@@ -221,14 +203,14 @@ export default function SocialMediaPage() {
                                 <div
                                     key={platform.key}
                                     className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${isActive
-                                            ? "bg-background/50 border-border"
-                                            : "bg-muted/30 border-muted opacity-60"
+                                        ? "bg-background/50 border-border"
+                                        : "bg-muted/30 border-muted opacity-60"
                                         }`}
                                 >
                                     {/* Platform Icon */}
                                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive
-                                            ? "bg-gradient-to-br from-accent-coral/20 to-accent-peach/20"
-                                            : "bg-muted"
+                                        ? "bg-gradient-to-br from-accent-coral/20 to-accent-peach/20"
+                                        : "bg-muted"
                                         }`}>
                                         <SocialIcon platform={platform.platform} size={24} />
                                     </div>
@@ -282,8 +264,8 @@ export default function SocialMediaPage() {
                                             <button
                                                 onClick={() => isActive && handleDelete(platform.key)}
                                                 className={`p-2 rounded-lg transition-colors ${isActive
-                                                        ? "hover:bg-muted text-accent-coral"
-                                                        : "hover:bg-muted text-muted-foreground cursor-not-allowed"
+                                                    ? "hover:bg-muted text-accent-coral"
+                                                    : "hover:bg-muted text-muted-foreground cursor-not-allowed"
                                                     }`}
                                                 title={isActive ? "Link is active (click to deactivate)" : "No link to toggle"}
                                                 disabled={!isActive}
@@ -295,8 +277,8 @@ export default function SocialMediaPage() {
                                             <button
                                                 onClick={() => handleDelete(platform.key)}
                                                 className={`p-2 rounded-lg transition-colors ${isActive
-                                                        ? "hover:bg-red-50 dark:hover:bg-red-950"
-                                                        : "opacity-50 cursor-not-allowed"
+                                                    ? "hover:bg-red-50 dark:hover:bg-red-950"
+                                                    : "opacity-50 cursor-not-allowed"
                                                     }`}
                                                 title="Delete link"
                                                 disabled={!isActive}

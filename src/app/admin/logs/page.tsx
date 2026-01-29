@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft, AlertTriangle, RefreshCw, Trash2, Loader2, 
+  AlertTriangle, RefreshCw, Trash2, Loader2,
   CheckCircle, Activity, Info, AlertCircle, Filter,
   ChevronLeft, ChevronRight, User, Clock, FileText
 } from "lucide-react";
+import { InfoBar } from "@/components/admin/info-bar";
 
 interface SystemLog {
   id: number;
@@ -42,7 +42,7 @@ export default function AdminLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
-  
+
   // Filters
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("");
@@ -52,21 +52,21 @@ export default function AdminLogsPage() {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
       });
-      
+
       if (levelFilter !== "all") params.append("level", levelFilter);
       if (actionFilter) params.append("action", actionFilter);
-      
+
       const res = await fetch(`/api/admin/logs?${params}`);
       const result = await res.json();
-      
+
       if (!res.ok) throw new Error(result.error || "Failed to fetch logs");
-      
+
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch logs");
@@ -81,7 +81,7 @@ export default function AdminLogsPage() {
 
   const handleClearOld = async (days: number) => {
     if (!confirm(`Clear all logs older than ${days} days?`)) return;
-    
+
     setClearing(true);
     try {
       const res = await fetch(`/api/admin/logs?daysOld=${days}`, { method: "DELETE" });
@@ -135,20 +135,17 @@ export default function AdminLogsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="p-2 rounded-lg hover:bg-muted transition-colors">
-              <ArrowLeft size={20} />
-            </Link>
-            <div>
-              <h1 className="font-display text-xl tracking-wide uppercase">System Logs</h1>
-              <p className="text-sm text-muted-foreground">
-                Audit trail of all admin actions
-              </p>
-            </div>
+    <div className="min-h-screen">
+      {/* InfoBar */}
+      <InfoBar counter={data?.total ? `${data.total} logs` : undefined} />
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 pb-10">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-display text-display-md tracking-wider uppercase">System Logs</h1>
+            <p className="text-muted-foreground mt-2">Audit trail of all admin actions</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -178,9 +175,7 @@ export default function AdminLogsPage() {
             </div>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Cards */}
         {data?.stats && (
           <div className="grid grid-cols-3 gap-4 mb-6">
@@ -221,7 +216,7 @@ export default function AdminLogsPage() {
               <Filter size={16} className="text-muted-foreground" />
               <span className="text-sm font-medium">Filters:</span>
             </div>
-            
+
             <select
               value={levelFilter}
               onChange={(e) => { setLevelFilter(e.target.value); setPage(1); }}
@@ -369,7 +364,7 @@ export default function AdminLogsPage() {
             <li>Logs older than 90 days are recommended to be cleared periodically</li>
           </ul>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

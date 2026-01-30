@@ -126,6 +126,34 @@
   }
 
   /* ========================================
+     MOBILE MENU PANEL
+     ======================================== */
+  .mobile-menu-panel {
+    @apply backdrop-blur-xl;
+    background: linear-gradient(165deg,
+        #FEF3E8 0%,
+        #F8E8D6 25%,
+        #F2DCC4 50%,
+        #ECD0B2 75%,
+        #E6C4A0 100%);
+    box-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .dark .mobile-menu-panel {
+    background: linear-gradient(165deg,
+        #2D2620 0%,
+        #282218 25%,
+        #231E14 50%,
+        #1E1A10 75%,
+        #19160C 100%);
+    box-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(232, 121, 96, 0.08);
+  }
+
+  /* ========================================
      GRADIENT BACKGROUNDS
      ======================================== */
   .gradient-warm-bg {

@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       data: {
         email: normalizedEmail,
         receiveEventAlerts,
+        ipAddress: clientIP !== "unknown" ? clientIP : null,
       },
     });
 

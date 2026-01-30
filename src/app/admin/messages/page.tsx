@@ -96,20 +96,20 @@ export default async function MessagesPage({
 
             <div className="max-w-7xl mx-auto px-4 pb-10">
                 {/* Page Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="font-display text-display-md tracking-wider uppercase flex items-center gap-3">
-                            <MessageSquare className="text-accent-coral" size={32} />
+                        <h1 className="font-display text-display-sm sm:text-display-md tracking-wider uppercase flex items-center gap-3">
+                            <MessageSquare className="text-accent-coral" size={28} />
                             Messages
                         </h1>
-                        <p className="text-muted-foreground mt-2">
+                        <p className="text-muted-foreground mt-1 text-sm">
                             {stats.total} total • {stats.unread} unread
                         </p>
                     </div>
                     {stats.unread > 0 && (
                         <form action={markAllRead}>
-                            <button type="submit" className="btn-secondary flex items-center gap-2">
-                                <Eye size={16} />
+                            <button type="submit" className="btn-secondary flex items-center gap-2 text-xs px-3 py-2 sm:text-sm sm:px-4">
+                                <Eye size={14} />
                                 Mark All Read
                             </button>
                         </form>
@@ -117,26 +117,26 @@ export default async function MessagesPage({
                 </div>
 
                 {/* Search and Filters */}
-                <div className="glass-card p-4 mb-6">
-                    <form className="flex flex-wrap gap-4">
-                        <div className="flex-1 min-w-[200px] relative">
+                <div className="glass-card p-3 sm:p-4 mb-6">
+                    <form className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <div className="flex-1 relative">
                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 type="text"
                                 name="search"
                                 defaultValue={params.search}
-                                placeholder="Search messages, names, emails, countries..."
-                                className="input-field pl-10 w-full"
+                                placeholder="Search messages..."
+                                className="input-field pl-10 w-full text-sm"
                             />
                         </div>
-                        <div className="flex items-center gap-3">
-                            <select name="sort" defaultValue={params.sort || "newest"} className="input-field pr-8">
-                                <option value="newest">Newest First</option>
-                                <option value="oldest">Oldest First</option>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <select name="sort" defaultValue={params.sort || "newest"} className="input-field pr-8 text-sm flex-1 sm:flex-none">
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
                                 <option value="name">By Name</option>
                                 <option value="country">By Country</option>
                             </select>
-                            <label className="flex items-center gap-2 text-sm">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap">
                                 <input
                                     type="checkbox"
                                     name="unread"
@@ -144,10 +144,10 @@ export default async function MessagesPage({
                                     defaultChecked={showUnread}
                                     className="w-4 h-4 accent-accent-coral"
                                 />
-                                Unread only
+                                Unread
                             </label>
-                            <button type="submit" className="btn-primary flex items-center gap-2">
-                                <Filter size={16} />
+                            <button type="submit" className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 py-2">
+                                <Filter size={14} />
                                 Apply
                             </button>
                         </div>

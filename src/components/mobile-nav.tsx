@@ -13,7 +13,6 @@ interface MobileNavProps {
 export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop = true }: MobileNavProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Close menu on escape key
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") setIsOpen(false);
@@ -22,21 +21,16 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
         return () => document.removeEventListener("keydown", handleEscape);
     }, []);
 
-    // Prevent body scroll when menu is open
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "";
         }
-        return () => {
-            document.body.style.overflow = "";
-        };
+        return () => { document.body.style.overflow = ""; };
     }, [isOpen]);
 
-    const handleLinkClick = () => {
-        setIsOpen(false);
-    };
+    const handleLinkClick = () => setIsOpen(false);
 
     const navLinks = [
         { href: "#concerts", label: "Concerts", show: true },
@@ -48,7 +42,7 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
 
     return (
         <div className="md:hidden">
-            {/* Hamburger Button - 44px min touch target */}
+            {/* Hamburger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
@@ -58,43 +52,30 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
                 {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            {/* Mobile Menu Overlay */}
-            <div
-                className={`fixed inset-0 z-[60] transition-all duration-300 ${isOpen ? "visible opacity-100" : "invisible opacity-0"
-                    }`}
-            >
-                {/* Backdrop */}
+            {/* Mobile Menu Overlay - Using Tailwind bg classes */}
+            {isOpen && (
                 <div
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    className="fixed inset-0 z-[200] bg-black/90"
                     onClick={() => setIsOpen(false)}
-                />
-
-                {/* Menu Panel */}
-                <div
-                    className={`absolute top-0 right-0 h-full w-[280px] max-w-[80vw] glass-card rounded-l-3xl shadow-2xl transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"
-                        }`}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-border">
-                        <span className="font-display text-lg tracking-widest uppercase">{artistName}</span>
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-                            aria-label="Close menu"
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
+                    {/* Close button */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+                        className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        aria-label="Close menu"
+                    >
+                        <X size={20} className="text-white" />
+                    </button>
 
-                    {/* Navigation Links - 44px min touch target */}
-                    <nav className="p-6">
-                        <ul className="space-y-2">
+                    {/* Navigation Links - Right Aligned */}
+                    <nav className="pt-28 px-8">
+                        <ul className="space-y-6 text-right">
                             {navLinks.map((link) => (
                                 <li key={link.href}>
                                     <Link
                                         href={link.href}
-                                        onClick={handleLinkClick}
-                                        className="block py-3 px-4 text-lg font-medium text-foreground hover:bg-muted/50 rounded-xl transition-colors min-h-[44px] flex items-center"
+                                        onClick={(e) => { e.stopPropagation(); handleLinkClick(); }}
+                                        className="inline-block text-xl font-display tracking-wider text-white hover:text-accent-coral transition-colors"
                                     >
                                         {link.label}
                                     </Link>
@@ -103,7 +84,7 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
                         </ul>
                     </nav>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Lock, User, AlertCircle, Loader2, Music2 } from "lucide-react";
+import { Lock, User, AlertCircle, Loader2, Music2, Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -102,14 +103,22 @@ export default function AdminLoginPage() {
                   <Lock size={18} />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-accent-coral focus:ring-2 focus:ring-accent-coral/20 outline-none transition-all"
+                  className="w-full pl-12 pr-12 py-3 rounded-xl bg-muted/50 border border-border focus:border-accent-coral focus:ring-2 focus:ring-accent-coral/20 outline-none transition-all"
                   placeholder="Enter password"
                   required
                   autoComplete="current-password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
@@ -117,7 +126,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 rounded-xl bg-accent-coral hover:bg-accent-coral/90 text-white font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 dark:from-amber-600 dark:via-amber-500 dark:to-amber-600 text-white font-medium transition-all hover:brightness-110 shadow-lg shadow-amber-900/20 dark:shadow-amber-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

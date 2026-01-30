@@ -63,7 +63,7 @@ export function ReplyModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -71,10 +71,10 @@ export function ReplyModal({
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl mx-4 glass-card p-0 overflow-hidden">
+            <div className="relative w-[95%] max-w-2xl glass-card p-0 overflow-hidden max-h-[85vh] flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                    <h2 className="font-display text-xl">Reply to Message</h2>
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border flex-shrink-0">
+                    <h2 className="font-display text-lg sm:text-xl">Reply to Message</h2>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -83,9 +83,9 @@ export function ReplyModal({
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    {/* Email Fields */}
-                    <div className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                    {/* Email Fields - Scrollable */}
+                    <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                         {/* From (Read-only) */}
                         <div>
                             <label className="block text-sm font-medium text-muted-foreground mb-1">
@@ -170,12 +170,12 @@ export function ReplyModal({
                         )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-muted/30">
+                    {/* Footer - Fixed at bottom */}
+                    <div className="flex items-center justify-end gap-3 px-4 sm:px-6 py-4 border-t border-border bg-muted/30 flex-shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="btn-ghost"
+                            className="btn-ghost text-sm"
                             disabled={isSending}
                         >
                             Cancel
@@ -183,7 +183,7 @@ export function ReplyModal({
                         <button
                             type="submit"
                             disabled={isSending}
-                            className="btn-primary flex items-center gap-2"
+                            className="btn-primary flex items-center gap-2 text-sm"
                         >
                             {isSending ? (
                                 <>
@@ -193,7 +193,7 @@ export function ReplyModal({
                             ) : (
                                 <>
                                     <Send size={16} />
-                                    Send Reply
+                                    Send
                                 </>
                             )}
                         </button>

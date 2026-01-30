@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Calendar, MapPin, Ticket, Save, Loader2, Send, Mail } from "lucide-react";
 import { ImageUploadWithCrop } from "@/components/image-upload-with-crop";
 import { AnnouncementPreviewModal } from "@/components/admin/announcement-preview-modal";
+import { LocationAutocomplete } from "@/components/admin/location-autocomplete";
 import { InfoBar } from "@/components/admin/info-bar";
 
 export default function NewEventPage() {
@@ -22,6 +23,10 @@ export default function NewEventPage() {
   // Modal state
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
+
+  // Location state for autocomplete
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("");
 
   const handleImageUpload = (file: File, croppedDataUrl: string) => {
     setImageData(croppedDataUrl);
@@ -196,51 +201,29 @@ export default function NewEventPage() {
             </div>
           </div>
 
-          {/* Venue & Location */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="venue" className="block text-sm font-medium mb-2">
-                <MapPin size={16} className="inline mr-2" />
-                Venue *
-              </label>
-              <input
-                type="text"
-                id="venue"
-                name="venue"
-                required
-                placeholder="e.g., The Fonda Theatre"
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium mb-2">
-                City *
-              </label>
-              <input
-                type="text"
-                id="city"
-                name="city"
-                required
-                placeholder="e.g., Los Angeles"
-                className="input-field"
-              />
-            </div>
-          </div>
-
-          {/* Country */}
+          {/* Venue */}
           <div>
-            <label htmlFor="country" className="block text-sm font-medium mb-2">
-              Country
+            <label htmlFor="venue" className="block text-sm font-medium mb-2">
+              <MapPin size={16} className="inline mr-2" />
+              Venue *
             </label>
             <input
               type="text"
-              id="country"
-              name="country"
-              defaultValue="USA"
-              placeholder="e.g., USA"
+              id="venue"
+              name="venue"
+              required
+              placeholder="e.g., The Fonda Theatre"
               className="input-field"
             />
           </div>
+
+          {/* City & Country Autocomplete */}
+          <LocationAutocomplete
+            onSelect={(city, country) => {
+              setSelectedCity(city);
+              setSelectedCountry(country);
+            }}
+          />
 
           {/* Ticket URL - Conditional Requirement */}
           <div>

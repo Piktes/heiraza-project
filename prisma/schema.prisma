@@ -265,6 +265,7 @@ model Subscriber {
   isActive             Boolean   @default(true)
   
   // Geolocation (from IP at signup)
+  ipAddress            String?   @db.VarChar(45)
   country              String?   @db.VarChar(100)
   city                 String?   @db.VarChar(100)
   countryCode          String?   @db.VarChar(5)
@@ -273,6 +274,8 @@ model Subscriber {
   unsubscribeToken     String?   @unique @db.VarChar(64)
   unsubscribeReason    String?   @db.Text
   unsubscribedAt       DateTime?
+  
+  @@index([ipAddress])
 }
 
 // ========================================
@@ -283,11 +286,14 @@ model Message {
   name        String   @db.VarChar(255)
   email       String   @db.VarChar(255)
   message     String   @db.Text
+  ipAddress   String?  @db.VarChar(45)
   country     String?  @db.VarChar(100)
   city        String?  @db.VarChar(100)
   countryCode String?  @db.VarChar(5)
   createdAt   DateTime @default(now())
   isRead      Boolean  @default(false)
+  
+  @@index([ipAddress])
 }
 
 // ========================================
@@ -299,4 +305,21 @@ model EmailSignature {
   logoUrl   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ========================================
+// VISITOR LOGS (Site Analytics)
+// ========================================
+model VisitorLog {
+  id           Int      @id @default(autoincrement())
+  visitorHash  String?  @db.VarChar(64)  // SHA-256 hash of IP (privacy-compliant)
+  country      String?  @db.VarChar(100)
+  city         String?  @db.VarChar(100)
+  userAgent    String?  @db.VarChar(500)
+  visitedAt    DateTime @default(now())
+  isSubscriber Boolean  @default(false)  // Was a subscriber at time of visit
+  hasMessaged  Boolean  @default(false)  // Had sent a message at time of visit
+  
+  @@index([visitorHash])
+  @@index([visitedAt])
 }

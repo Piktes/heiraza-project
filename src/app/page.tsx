@@ -14,6 +14,7 @@ import { ContactForm } from "@/components/contact-form";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { JsonLd } from "@/components/json-ld";
 import { MobileNav } from "@/components/mobile-nav";
+import { VisitorTracker } from "@/components/visitor-tracker";
 import {
   ArrowRight, Mail, MapPin, Calendar, Sparkles, MessageCircle,
   Music2, ImageIcon,
@@ -121,6 +122,7 @@ export default async function Home() {
     <main className="relative grain">
       <JsonLd artist={artist} />
       <SpecialEventPopup event={specialEvent} />
+      <VisitorTracker />
 
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-4">
@@ -138,11 +140,6 @@ export default async function Home() {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <MobileNav
-                artistName={artist?.name}
-                showVideos={(settings?.isYoutubeVisible ?? true) && videos.length > 0}
-                showShop={settings?.isShopVisible ?? true}
-              />
             </div>
           </div>
         </div>
@@ -160,13 +157,13 @@ export default async function Home() {
         <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-accent-peach/20 rounded-full blur-3xl animate-float z-10" style={{ animationDelay: "3s" }} />
 
         <div className="relative z-30 text-center px-6 max-w-5xl mx-auto">
-          <p className="opacity-0 animate-fade-in text-sm md:text-base font-medium tracking-[0.3em] uppercase text-muted-foreground mb-6">
+          <p className="opacity-0 animate-fade-in text-sm md:text-base font-medium tracking-[0.3em] uppercase text-white/80 mb-6">
             Welcome to the world of
           </p>
           <h1 className="opacity-0 animate-fade-in animate-delay-100 font-display text-display-xl tracking-widest uppercase">
             {artist?.name || "Heiraza"}
           </h1>
-          <p className="opacity-0 animate-fade-in animate-delay-200 mt-8 text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-serif italic">
+          <p className="opacity-0 animate-fade-in animate-delay-200 mt-8 text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed font-serif italic">
             Experience the sound that moves souls
           </p>
           <div className="opacity-0 animate-fade-in animate-delay-300 mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">

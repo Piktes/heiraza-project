@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Calendar, MapPin, Ticket, Save, Loader2, Send, Mail } from "lucide-react";
 import { ImageUploadWithCrop } from "@/components/image-upload-with-crop";
 import { AnnouncementPreviewModal } from "@/components/admin/announcement-preview-modal";
+import { LocationAutocomplete } from "@/components/admin/location-autocomplete";
 import { InfoBar } from "@/components/admin/info-bar";
 
 interface Event {
@@ -46,6 +47,10 @@ export default function EditEventPage() {
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
     const [pendingUpdateData, setPendingUpdateData] = useState<Record<string, unknown> | null>(null);
 
+    // Location state for autocomplete
+    const [selectedCity, setSelectedCity] = useState("");
+    const [selectedCountry, setSelectedCountry] = useState("");
+
     // Fetch event data
     useEffect(() => {
         async function fetchEvent() {
@@ -56,6 +61,8 @@ export default function EditEventPage() {
                     setEvent(data);
                     setIsFree(data.isFree || false);
                     setIsSoldOut(data.isSoldOut || false);
+                    setSelectedCity(data.city || "");
+                    setSelectedCountry(data.country || "");
                 } else {
                     setError("Event not found");
                 }
@@ -87,8 +94,8 @@ export default function EditEventPage() {
             description: formData.get("description") || null,
             date: new Date(`${dateStr}T${timeStr}`).toISOString(),
             venue: formData.get("venue"),
-            city: formData.get("city"),
-            country: formData.get("country") || "USA",
+            city: selectedCity || formData.get("city"),
+            country: selectedCountry || formData.get("country") || "USA",
             price: formData.get("price") || null,
             ticketUrl: formData.get("ticketUrl") || null,
             isActive: formData.get("isActive") === "on",
@@ -299,50 +306,31 @@ export default function EditEventPage() {
                         </div>
                     </div>
 
-                    {/* Venue & Location */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="venue" className="block text-sm font-medium mb-2">
-                                <MapPin size={16} className="inline mr-2" />
-                                Venue *
-                            </label>
-                            <input
-                                type="text"
-                                id="venue"
-                                name="venue"
-                                required
-                                defaultValue={event.venue}
-                                className="input-field"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="city" className="block text-sm font-medium mb-2">
-                                City *
-                            </label>
-                            <input
-                                type="text"
-                                id="city"
-                                name="city"
-                                required
-                                defaultValue={event.city}
-                                className="input-field"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Country */}
+                    {/* Venue */}
                     <div>
-                        <label htmlFor="country" className="block text-sm font-medium mb-2">
-                            Country
+                        <label htmlFor="venue" className="block text-sm font-medium mb-2">
+                            <MapPin size={16} className="inline mr-2" />
+                            Venue *
                         </label>
                         <input
                             type="text"
-                            id="country"
-                            name="country"
-                            defaultValue={event.country}
+                            id="venue"
+                            name="venue"
+                            required
+                            defaultValue={event.venue}
                             className="input-field"
                         />
                     </div>
+
+                    {/* City & Country Autocomplete */}
+                    <LocationAutocomplete
+                        onSelect={(city, country) => {
+                            setSelectedCity(city);
+                            setSelectedCountry(country);
+                        }}
+                        initialCity={event.city}
+                        initialCountry={event.country}
+                    />
 
                     {/* Ticket URL - Conditional Requirement */}
                     <div>

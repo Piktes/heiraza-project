@@ -144,18 +144,18 @@ export default function EventsPage() {
 
             <main className="max-w-5xl mx-auto px-4 pb-10">
                 {/* Page Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="font-display text-display-md tracking-wider uppercase">Events</h1>
-                        <p className="text-muted-foreground mt-2">
+                        <h1 className="font-display text-display-sm sm:text-display-md tracking-wider uppercase">Events</h1>
+                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
                             Manage concerts, tours, and shows.
                         </p>
                     </div>
                     <Link
                         href="/admin/events/new"
-                        className="btn-primary flex items-center gap-2 text-sm"
+                        className="btn-primary flex items-center justify-center gap-2 text-sm w-full sm:w-auto"
                     >
-                        <Plus size={16} />
+                        <Plus size={18} />
                         Add Event
                     </Link>
                 </div>

@@ -82,8 +82,8 @@ function SortableTrackItem({
       ref={setNodeRef}
       style={style}
       className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${track.isActive
-          ? "bg-background/50 border-border"
-          : "bg-muted/30 border-muted opacity-60"
+        ? "bg-background/50 border-border"
+        : "bg-muted/30 border-muted opacity-60"
         } ${isDragging ? "shadow-lg ring-2 ring-accent-coral/50" : ""}`}
     >
       {/* Index Number */}
@@ -124,8 +124,8 @@ function SortableTrackItem({
           type="button"
           onClick={() => onToggleClick(track.id, track.isActive)}
           className={`p-2 rounded-lg transition-colors ${track.isActive
-              ? "hover:bg-muted text-accent-coral"
-              : "hover:bg-muted text-muted-foreground"
+            ? "hover:bg-muted text-accent-coral"
+            : "hover:bg-muted text-muted-foreground"
             }`}
           title={track.isActive ? "Deactivate track" : "Activate track"}
         >
@@ -266,16 +266,18 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
   };
 
   return (
-    <div className="space-y-4">
+    <div className="p-6">
       {/* Add Button */}
       {!isAdding && (
-        <button
-          onClick={() => setIsAdding(true)}
-          className="btn-primary flex items-center gap-2 text-sm"
-        >
-          <Plus size={16} />
-          Add Track
-        </button>
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setIsAdding(true)}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <Plus size={16} />
+            Add Track
+          </button>
+        </div>
       )}
 
       {/* Add Form */}

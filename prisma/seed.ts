@@ -105,29 +105,29 @@ From the underground clubs of Brooklyn to festival stages across three continent
   // ========================================
   console.log("🎵 Creating Audio Tracks...");
   const tracks = [
-    { 
-      title: "Whispers in the Static", 
-      artist: "Heiraza", 
-      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", 
-      coverImage: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&q=80", 
+    {
+      title: "Whispers in the Static",
+      artist: "Heiraza",
+      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      coverImage: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&q=80",
       sortOrder: 0,
-      isActive: true 
+      isActive: true
     },
-    { 
-      title: "Midnight Echoes", 
-      artist: "Heiraza", 
-      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", 
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&q=80", 
+    {
+      title: "Midnight Echoes",
+      artist: "Heiraza",
+      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&q=80",
       sortOrder: 1,
-      isActive: true 
+      isActive: true
     },
-    { 
-      title: "Neon Dreams", 
-      artist: "Heiraza ft. Luna", 
-      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", 
-      coverImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80", 
+    {
+      title: "Neon Dreams",
+      artist: "Heiraza ft. Luna",
+      externalLink: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+      coverImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80",
       sortOrder: 2,
-      isActive: true 
+      isActive: true
     },
   ];
   for (const track of tracks) {
@@ -236,12 +236,108 @@ From the underground clubs of Brooklyn to festival stages across three continent
   console.log("   ✓ Special event created\n");
 
   // ========================================
-  // SAMPLE DATA
+  // SAMPLE VISITORS (150 entries with countries)
   // ========================================
-  console.log("📧 Creating sample data...");
-  await prisma.subscriber.createMany({ data: [{ email: "fan1@example.com" }, { email: "fan2@example.com" }] });
-  await prisma.message.create({ data: { name: "Sarah", email: "sarah@email.com", message: "Love your music!", isRead: false } });
-  console.log("   ✓ Sample subscribers and messages created\n");
+  console.log("👥 Creating sample visitors...");
+  const countries = [
+    { country: "United States", cities: ["New York", "Los Angeles", "Chicago", "Miami", "Seattle", "Austin", "Denver", "Boston"] },
+    { country: "United Kingdom", cities: ["London", "Manchester", "Birmingham", "Liverpool", "Glasgow", "Edinburgh"] },
+    { country: "Canada", cities: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa"] },
+    { country: "Germany", cities: ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne"] },
+    { country: "France", cities: ["Paris", "Lyon", "Marseille", "Nice", "Toulouse"] },
+    { country: "Australia", cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide"] },
+    { country: "Japan", cities: ["Tokyo", "Osaka", "Kyoto", "Yokohama", "Nagoya"] },
+    { country: "Brazil", cities: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"] },
+    { country: "Netherlands", cities: ["Amsterdam", "Rotterdam", "The Hague", "Utrecht"] },
+    { country: "Spain", cities: ["Madrid", "Barcelona", "Valencia", "Sevilla"] },
+  ];
+
+  const crypto = await import("crypto");
+  const hashIP = (ip: string) => crypto.createHash("sha256").update(ip).digest("hex");
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const randomDate = (start: Date, end: Date) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+
+  const visitorData = [];
+  for (let i = 0; i < 150; i++) {
+    const countryData = countries[Math.floor(Math.random() * countries.length)];
+    const city = countryData.cities[Math.floor(Math.random() * countryData.cities.length)];
+    const fakeIP = `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+
+    visitorData.push({
+      visitorHash: hashIP(fakeIP + i),
+      country: countryData.country,
+      city: city,
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      visitedAt: randomDate(thirtyDaysAgo, now),
+      isSubscriber: Math.random() < 0.15,
+      hasMessaged: Math.random() < 0.05,
+    });
+  }
+  await prisma.visitorLog.deleteMany({});
+  await prisma.visitorLog.createMany({ data: visitorData });
+  console.log(`   ✓ ${visitorData.length} visitors created\n`);
+
+  // ========================================
+  // SAMPLE SUBSCRIBERS (15 entries)
+  // ========================================
+  console.log("📧 Creating sample subscribers...");
+  const subscriberEmails = [
+    "alex.music@gmail.com", "sarah.jones@yahoo.com", "mike.beats@outlook.com",
+    "emma.wilson@hotmail.com", "david.sounds@gmail.com", "lisa.melodies@icloud.com",
+    "tom.rhythms@gmail.com", "nina.vibes@outlook.com", "chris.tunes@yahoo.com",
+    "amy.harmony@gmail.com", "jake.bass@proton.me", "maya.synth@gmail.com",
+    "ryan.keys@outlook.com", "zoe.strings@yahoo.com", "leo.drums@gmail.com",
+  ];
+
+  let subscriberCount = 0;
+  for (let i = 0; i < subscriberEmails.length; i++) {
+    const countryData = countries[Math.floor(Math.random() * countries.length)];
+    try {
+      await prisma.subscriber.create({
+        data: {
+          email: subscriberEmails[i],
+          receiveEventAlerts: Math.random() > 0.3,
+          ipAddress: `10.0.${Math.floor(Math.random() * 255)}.${i}`,
+          country: countryData.country,
+          city: countryData.cities[Math.floor(Math.random() * countryData.cities.length)],
+          isActive: true,
+          subscribedAt: randomDate(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000), now),
+        },
+      });
+      subscriberCount++;
+    } catch (e) {
+      // Skip duplicates
+    }
+  }
+  console.log(`   ✓ ${subscriberCount} subscribers created\n`);
+
+  // ========================================
+  // SAMPLE MESSAGES (8 entries)
+  // ========================================
+  console.log("💬 Creating sample messages...");
+  const messageContents = [
+    { name: "Alex Martinez", email: "alex.m@gmail.com", message: "Absolutely love your new track! The production quality is incredible. Any chance of a vinyl release?" },
+    { name: "Sarah Johnson", email: "sarah.j@yahoo.com", message: "Just discovered your music through Spotify. Blown away! When are you touring Europe?" },
+    { name: "Mike Chen", email: "mike.c@outlook.com", message: "Your live performance last month was unforgettable. Thank you for the amazing show!" },
+    { name: "Emma Davis", email: "emma.d@icloud.com", message: "Would love to collaborate on a track. I'm a producer based in LA. Let me know if you're interested!" },
+    { name: "David Smith", email: "david.s@gmail.com", message: "The new album is on repeat! 'Echoes' is my favorite track. Pure magic." },
+    { name: "Lisa Park", email: "lisa.p@gmail.com", message: "Do you have any merch available? Would love to support with a t-shirt purchase!" },
+    { name: "Tom Wilson", email: "tom.w@proton.me", message: "Your music got me through tough times. Thank you for creating such beautiful art." },
+    { name: "Nina Rodriguez", email: "nina.r@outlook.com", message: "The visuals in your latest music video are stunning. Who directed it?" },
+  ];
+
+  const messageData = messageContents.map((msg, i) => ({
+    name: msg.name,
+    email: msg.email,
+    message: msg.message,
+    ipAddress: `172.16.${Math.floor(Math.random() * 255)}.${i}`,
+    createdAt: randomDate(new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000), now),
+    isRead: Math.random() > 0.5,
+  }));
+  await prisma.message.createMany({ data: messageData });
+  console.log(`   ✓ ${messageData.length} messages created\n`);
 
   console.log("═══════════════════════════════════════");
   console.log("🎉 SEEDING COMPLETE!");
@@ -249,7 +345,11 @@ From the underground clubs of Brooklyn to festival stages across three continent
   console.log("\n📋 Admin Credentials:");
   console.log("   Username: Sahadmin");
   console.log("   Password: Sahs2207$");
-  console.log("\n🚀 Run: npx prisma db push && npm run db:seed && npm run dev\n");
+  console.log("\n📊 Sample Data Summary:");
+  console.log(`   👥 Visitors:    150`);
+  console.log(`   📧 Subscribers: 15`);
+  console.log(`   💬 Messages:    8`);
+  console.log("\n🚀 Run: npm run db:seed && npm run dev\n");
 }
 
 main()

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle, RefreshCw, Trash2, Loader2,
   CheckCircle, Activity, Info, AlertCircle, Filter,
-  ChevronLeft, ChevronRight, User, Clock, FileText
+  ChevronLeft, ChevronRight, User, Clock, FileText, Download
 } from "lucide-react";
 import { InfoBar } from "@/components/admin/info-bar";
 
@@ -97,6 +97,59 @@ export default function AdminLogsPage() {
     }
   };
 
+  const exportToCSV = async () => {
+    try {
+      // Fetch all logs with current filters (high limit to get all)
+      const params = new URLSearchParams({ page: "1", limit: "10000" });
+      if (levelFilter !== "all") params.append("level", levelFilter);
+      if (actionFilter) params.append("action", actionFilter);
+
+      const res = await fetch(`/api/admin/logs?${params}`);
+      const result = await res.json();
+
+      if (!res.ok) throw new Error(result.error || "Failed to fetch logs");
+
+      const logs: SystemLog[] = result.logs;
+      if (logs.length === 0) {
+        alert("No logs to export");
+        return;
+      }
+
+      // CSV headers
+      const headers = ["Timestamp", "Level", "Username", "Action", "Details", "IP Address"];
+
+      // Convert logs to CSV rows
+      const rows = logs.map((log) => [
+        new Date(log.timestamp).toISOString(),
+        log.level,
+        log.username,
+        log.action,
+        (log.details || "").replace(/"/g, '""'), // Escape quotes
+        log.ipAddress || "",
+      ]);
+
+      // Build CSV content
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ].join("\n");
+
+      // Trigger download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `system-logs-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to export logs:", err);
+      alert("Failed to export logs");
+    }
+  };
+
   const getLevelIcon = (level: string) => {
     switch (level) {
       case "ERROR": return <AlertCircle size={16} className="text-red-500" />;
@@ -156,6 +209,14 @@ export default function AdminLogsPage() {
               title="Refresh"
             >
               <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 transition-colors"
+              title="Export to CSV"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Export CSV</span>
             </button>
             <div className="relative">
               <button

@@ -129,12 +129,13 @@ export async function POST(request: NextRequest) {
     // Fetch geolocation (non-blocking, fail silently)
     const geoLocation = await getGeoLocation(clientIP);
 
-    // Save to database (location saved, but NOT the raw IP)
+    // Save to database (location saved with the IP for cross-referencing)
     await prisma.message.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
         message: message.trim(),
+        ipAddress: clientIP !== "unknown" ? clientIP : null,
         country: geoLocation.country,
         city: geoLocation.city,
         countryCode: geoLocation.countryCode,

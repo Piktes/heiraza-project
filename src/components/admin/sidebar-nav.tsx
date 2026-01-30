@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Home, Music2, Youtube, Calendar, Package, ImageIcon,
-    Bell, Share2, MessageSquare, Mail, ImagePlus, Settings, PenTool, FileText, Users, ScrollText, Shield,
+    Bell, Share2, MessageSquare, Mail, ImagePlus, Settings, PenTool, FileText, Users, ScrollText, Shield, Eye,
 } from "lucide-react";
 import { openSection } from "./dashboard-section";
 
 interface SidebarNavProps {
     unreadCount: number;
+    onLinkClick?: () => void;
 }
 
 interface NavItem {
@@ -21,7 +22,7 @@ interface NavItem {
     dividerBefore?: boolean;
 }
 
-export function SidebarNav({ unreadCount }: SidebarNavProps) {
+export function SidebarNav({ unreadCount, onLinkClick }: SidebarNavProps) {
     const pathname = usePathname();
 
     const navItems: NavItem[] = [
@@ -39,6 +40,7 @@ export function SidebarNav({ unreadCount }: SidebarNavProps) {
         { href: "/admin/auto-reply", icon: MessageSquare, label: "Auto Reply" },
         { href: "/admin/user-notifications", icon: Mail, label: "User Notifications" },
         { href: "/admin/email-signature", icon: PenTool, label: "Email Signature" },
+        { href: "/admin/visitors", icon: Eye, label: "Visitors" },
         { href: "/admin/subscribers", icon: Users, label: "Subscribers" },
         { href: "/admin/messages", icon: MessageSquare, label: "Messages", badge: unreadCount > 0 ? unreadCount : undefined },
         // System section with divider
@@ -53,6 +55,8 @@ export function SidebarNav({ unreadCount }: SidebarNavProps) {
         } else if (item.sectionId) {
             sessionStorage.setItem("openSection", item.sectionId);
         }
+        // Close mobile sidebar when any link is clicked
+        onLinkClick?.();
     };
 
     const isActive = (item: NavItem) => {
@@ -66,8 +70,8 @@ export function SidebarNav({ unreadCount }: SidebarNavProps) {
         <nav className="space-y-1">
             {navItems.map((item, index) => {
                 const Icon = item.icon;
-                const active = index === 0 && pathname === "/admin" ? true : 
-                              (pathname === item.href && !item.sectionId);
+                const active = index === 0 && pathname === "/admin" ? true :
+                    (pathname === item.href && !item.sectionId);
 
                 return (
                     <div key={`${item.label}-${index}`}>
@@ -82,11 +86,10 @@ export function SidebarNav({ unreadCount }: SidebarNavProps) {
                         <Link
                             href={item.sectionId ? `/admin#${item.sectionId}` : item.href}
                             onClick={(e) => handleNavClick(item, e)}
-                            className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
-                                active
-                                    ? "bg-accent-coral/10 text-accent-coral font-medium"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                            }`}
+                            className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${active
+                                ? "bg-accent-coral/10 text-accent-coral font-medium"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                }`}
                         >
                             <span className="flex items-center gap-3">
                                 <Icon size={18} />

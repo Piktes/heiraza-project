@@ -15,6 +15,7 @@ import { NewsletterForm } from "@/components/newsletter-form";
 import { JsonLd } from "@/components/json-ld";
 import { MobileNav } from "@/components/mobile-nav";
 import { VisitorTracker } from "@/components/visitor-tracker";
+import { BrandLogo } from "@/components/brand-logo";
 import {
   ArrowRight, Mail, MapPin, Calendar, Sparkles, MessageCircle,
   Music2, ImageIcon,
@@ -128,8 +129,8 @@ export default async function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 px-2 py-2 md:px-4 md:py-4">
         <div className="max-w-7xl mx-auto">
           <div className="glass rounded-full px-4 py-2 md:px-6 md:py-3 flex items-center justify-between">
-            <Link href="/" className="font-display text-lg md:text-2xl tracking-widest uppercase hover:opacity-70 transition-opacity">
-              {artist?.name || "Heiraza"}
+            <Link href="/" className="hover:opacity-70 transition-opacity">
+              <BrandLogo className="h-8 w-auto sm:h-10" />
             </Link>
 
             <div className="hidden md:flex items-center gap-8">

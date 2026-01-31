@@ -45,43 +45,40 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
             {/* Hamburger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors -ml-2"
                 aria-label={isOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isOpen}
             >
                 {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            {/* Mobile Menu Overlay - Using Tailwind bg classes */}
+            {/* Mobile Menu Overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-[200] bg-black/90"
+                    className="fixed inset-0 z-[200] bg-neutral-100/95 dark:bg-neutral-800/95 backdrop-blur-sm"
                     onClick={() => setIsOpen(false)}
                 >
                     {/* Close button */}
                     <button
                         onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
-                        className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
                         aria-label="Close menu"
                     >
-                        <X size={20} className="text-white" />
+                        <X size={20} className="text-foreground" />
                     </button>
 
-                    {/* Navigation Links - Right Aligned */}
-                    <nav className="pt-28 px-8">
-                        <ul className="space-y-6 text-right">
-                            {navLinks.map((link) => (
-                                <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        onClick={(e) => { e.stopPropagation(); handleLinkClick(); }}
-                                        className="inline-block text-xl font-display tracking-wider text-white hover:text-accent-coral transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+                    {/* Navigation Links - Left Aligned for better mobile UX or Center? User said "Left side of header", didn't specify menu alignment. Keeping it clear. */}
+                    <nav className="flex flex-col items-center justify-center h-full space-y-8">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                onClick={(e) => { e.stopPropagation(); handleLinkClick(); }}
+                                className="text-3xl font-display tracking-widest uppercase text-foreground hover:text-accent-coral transition-colors"
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
                     </nav>
                 </div>
             )}

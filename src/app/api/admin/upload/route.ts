@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", folder);
+    const uploadsDir = process.env.NODE_ENV === 'production'
+      ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', folder)
+      : path.join(process.cwd(), "public", "uploads", folder);
+
     console.log(`[Upload API] Target Directory: ${uploadsDir}`);
 
     await mkdir(uploadsDir, { recursive: true });

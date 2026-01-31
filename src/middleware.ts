@@ -11,6 +11,19 @@ const PUBLIC_PATHS = [
 export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
+    // FORCE HTTPS (Skip for localhost development)
+    if (process.env.NODE_ENV !== 'development') {
+        const rawProto = request.headers.get('x-forwarded-proto') || 'http';
+        const rawHost = request.headers.get('host') || '';
+
+        const proto = rawProto.split(',')[0].trim();
+        const host = rawHost.split(',')[0].trim();
+
+        if (proto === 'http') {
+            return NextResponse.redirect(`https://${host}${pathname}`, 301);
+        }
+    }
+
     // Check if this path is public (login or auth API)
     const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
 

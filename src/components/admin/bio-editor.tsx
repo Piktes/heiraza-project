@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Save, Upload, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
+import { compressImage } from "@/lib/image-compression";
 
 interface BioImage {
     id: number;
@@ -45,18 +46,46 @@ export function BioEditor({
         const files = e.target.files;
         if (!files) return;
 
-        for (const file of Array.from(files)) {
-            // Convert to Base64
-            const reader = new FileReader();
-            reader.onload = async () => {
+        setIsSaving(true);
+        try {
+            for (const file of Array.from(files)) {
+                // 1. Compress image to reduce upload size (Base64) - optimizations for web
+                // Check if file is too large to begin with, though compression helps
+                const compressedBase64 = await compressImage(file, {
+                    maxWidth: 1200,
+                    quality: 0.8
+                });
+
+                // 2. Upload to API to get persistent URL (handles VPS path)
+                const uploadResponse = await fetch("/api/admin/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        image: compressedBase64,
+                        folder: "bio"
+                    }),
+                });
+
+                if (!uploadResponse.ok) {
+                    console.error("Upload failed");
+                    continue;
+                }
+
+                const { url } = await uploadResponse.json();
+
+                // 3. Save URL to database via Server Action
                 const formData = new FormData();
-                formData.set("imageUrl", reader.result as string);
+                formData.set("imageUrl", url);
                 formData.set("caption", "");
                 await addImageAction(formData);
-                // Refresh images after upload
-                window.location.reload();
-            };
-            reader.readAsDataURL(file);
+            }
+            // Refresh to show new images
+            window.location.reload();
+        } catch (error) {
+            console.error("Error uploading images:", error);
+            alert("Failed to upload image. Please try again.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -161,8 +190,8 @@ export function BioEditor({
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDragEnd={handleDragEnd}
                                 className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing ${dragIndex === index
-                                        ? "border-accent-coral scale-105 shadow-lg"
-                                        : "border-border hover:border-accent-coral/50"
+                                    ? "border-accent-coral scale-105 shadow-lg"
+                                    : "border-border hover:border-accent-coral/50"
                                     }`}
                             >
                                 {/* Drag Handle */}

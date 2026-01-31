@@ -36,15 +36,15 @@ export function PopupCard({
 }: PopupCardProps) {
     // No longer using variant for sizing - always render identically
     return (
-        <div className="glass-card rounded-3xl overflow-hidden max-w-lg w-full">
+        <div className="glass-card rounded-2xl overflow-hidden max-w-[90vw] sm:max-w-sm w-full">
             {/* Close Button */}
             {showCloseButton && onClose && (
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-accent-coral/20 transition-colors"
+                    className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full glass flex items-center justify-center hover:bg-accent-coral/20 transition-colors"
                     aria-label="Close"
                 >
-                    <X size={20} />
+                    <X size={18} />
                 </button>
             )}
 
@@ -54,22 +54,22 @@ export function PopupCard({
                     <Image
                         src={imageUrl}
                         alt={title}
-                        width={800}
-                        height={600}
+                        width={600}
+                        height={400}
                         className="w-full h-auto object-contain"
-                        style={{ maxHeight: "400px" }}
+                        style={{ maxHeight: "250px" }}
                     />
                     {/* Gradient overlay for text readability */}
-                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/80 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/80 to-transparent" />
                 </div>
             )}
 
             {/* Content */}
-            <div className={`p-8 ${imageUrl ? "-mt-8 relative z-10" : ""}`}>
-                <h3 className="font-display tracking-wide mb-4 text-2xl">
+            <div className={`p-6 ${imageUrl ? "-mt-6 relative z-10" : ""}`}>
+                <h3 className="font-display tracking-wide mb-2 text-xl">
                     {title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                     {message}
                 </p>
 
@@ -79,10 +79,10 @@ export function PopupCard({
                         href={linkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-primary mt-6 inline-flex items-center gap-2"
+                        className="btn-primary mt-4 py-2 text-sm inline-flex items-center gap-2"
                     >
                         {linkText || "Learn More"}
-                        <ExternalLink size={16} />
+                        <ExternalLink size={14} />
                     </a>
                 )}
             </div>

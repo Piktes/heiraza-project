@@ -125,15 +125,12 @@ export default async function Home() {
       <VisitorTracker />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-3 py-2 md:px-4 md:py-4">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-2 py-2 md:px-4 md:py-4">
         <div className="max-w-7xl mx-auto">
           <div className="glass rounded-full px-4 py-2 md:px-6 md:py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 md:gap-0">
-              <MobileNav artistName={artist?.name || "Heiraza"} showVideos={videos.length > 0} showShop={products.length > 0} />
-              <Link href="/" className="font-display text-xl md:text-2xl tracking-widest uppercase hover:opacity-70 transition-opacity">
-                {artist?.name || "Heiraza"}
-              </Link>
-            </div>
+            <Link href="/" className="font-display text-lg md:text-2xl tracking-widest uppercase hover:opacity-70 transition-opacity">
+              {artist?.name || "Heiraza"}
+            </Link>
 
             <div className="hidden md:flex items-center gap-8">
               <Link href="#concerts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Concerts</Link>

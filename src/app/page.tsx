@@ -186,7 +186,6 @@ export default async function Home() {
 
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-0 animate-fade-in animate-delay-600 z-30">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <span className="text-xs tracking-widest uppercase">Scroll</span>
             <div className="w-px h-12 bg-gradient-to-b from-muted-foreground/50 to-transparent" />
           </div>
         </div>

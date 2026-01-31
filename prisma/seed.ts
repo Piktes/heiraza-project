@@ -303,7 +303,7 @@ From the underground clubs of Brooklyn to festival stages across three continent
           country: countryData.country,
           city: countryData.cities[Math.floor(Math.random() * countryData.cities.length)],
           isActive: true,
-          subscribedAt: randomDate(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000), now),
+          joinedAt: randomDate(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000), now),
         },
       });
       subscriberCount++;

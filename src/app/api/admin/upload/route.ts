@@ -19,17 +19,20 @@ export async function POST(request: NextRequest) {
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), "public", "uploads", folder);
+    console.log(`[Upload API] Target Directory: ${uploadsDir}`);
+
     await mkdir(uploadsDir, { recursive: true });
 
-    // Extract base64 content (remove data:image/jpeg;base64, prefix)
+    // Extract base64 content
     const base64Content = image.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Content, "base64");
 
-    // Generate unique filename with timestamp
+    // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     const filename = `${folder}-${timestamp}-${randomStr}.jpg`;
     const filepath = path.join(uploadsDir, filename);
+    console.log(`[Upload API] Saving file to: ${filepath}`);
 
     // Write file to disk
     await writeFile(filepath, buffer);
@@ -37,10 +40,10 @@ export async function POST(request: NextRequest) {
     // Return the public URL
     const publicUrl = `/uploads/${folder}/${filename}`;
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       url: publicUrl,
-      filename 
+      filename
     });
   } catch (error) {
     console.error("Error uploading image:", error);

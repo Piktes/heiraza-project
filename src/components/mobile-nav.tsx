@@ -44,44 +44,63 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
         <div className="md:hidden">
             {/* Hamburger Button */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => setIsOpen(true)}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors -ml-2"
-                aria-label={isOpen ? "Close menu" : "Open menu"}
+                aria-label="Open menu"
                 aria-expanded={isOpen}
             >
-                {isOpen ? <X size={24} /> : <Menu size={24} />}
+                <Menu size={24} />
             </button>
 
-            {/* Mobile Menu Overlay */}
+            {/* Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-[200] bg-neutral-100/95 dark:bg-neutral-800/95 backdrop-blur-sm"
+                    className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm transition-opacity"
                     onClick={() => setIsOpen(false)}
-                >
-                    {/* Close button */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
-                        className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
-                        aria-label="Close menu"
-                    >
-                        <X size={20} className="text-foreground" />
-                    </button>
-
-                    {/* Navigation Links - Left Aligned for better mobile UX or Center? User said "Left side of header", didn't specify menu alignment. Keeping it clear. */}
-                    <nav className="flex flex-col items-center justify-center h-full space-y-8">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                onClick={(e) => { e.stopPropagation(); handleLinkClick(); }}
-                                className="text-3xl font-display tracking-widest uppercase text-foreground hover:text-accent-coral transition-colors"
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
-                    </nav>
-                </div>
+                />
             )}
+
+            {/* Left Sidebar Drawer */}
+            <div
+                className={`fixed top-0 bottom-0 left-0 z-[201] w-[80%] max-w-sm bg-neutral-100 dark:bg-neutral-900 border-r border-black/5 dark:border-white/5 shadow-2xl transition-transform duration-300 ease-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+            >
+                <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900">
+                    {/* Header with Close Button */}
+                    <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5">
+                        <span className="font-display text-xl tracking-widest uppercase text-foreground/80">Menu</span>
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                            aria-label="Close menu"
+                        >
+                            <X size={20} className="text-foreground" />
+                        </button>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <nav className="flex-1 px-6 py-8 overflow-y-auto">
+                        <ul className="space-y-6">
+                            {navLinks.map((link) => (
+                                <li key={link.href}>
+                                    <Link
+                                        href={link.href}
+                                        onClick={() => { handleLinkClick(); }}
+                                        className="block py-2 text-2xl font-display tracking-wider text-foreground hover:text-accent-coral transition-colors"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+
+                    {/* Footer Info */}
+                    <div className="p-6 border-t border-black/5 dark:border-white/5 bg-neutral-50 dark:bg-black/20">
+                        <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">{artistName}</p>
+                        <p className="text-xs text-muted-foreground/50">Official Website</p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

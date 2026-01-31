@@ -262,13 +262,12 @@ export default function SocialMediaPage() {
 
                                             {/* Toggle Active (Eye Icon) */}
                                             <button
-                                                onClick={() => isActive && handleDelete(platform.key)}
+                                                onClick={() => isActive ? handleDelete(platform.key) : startEdit(platform.key)}
                                                 className={`p-2 rounded-lg transition-colors ${isActive
                                                     ? "hover:bg-muted text-accent-coral"
-                                                    : "hover:bg-muted text-muted-foreground cursor-not-allowed"
+                                                    : "hover:bg-muted text-muted-foreground"
                                                     }`}
-                                                title={isActive ? "Link is active (click to deactivate)" : "No link to toggle"}
-                                                disabled={!isActive}
+                                                title={isActive ? "Deactivate link" : "Activate link"}
                                             >
                                                 {isActive ? <Eye size={18} /> : <EyeOff size={18} />}
                                             </button>

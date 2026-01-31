@@ -3,6 +3,7 @@ import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MobileNav } from "@/components/mobile-nav";
 import { SocialLinksRow } from "@/components/social-icons";
 import { HeroAudioPlayer } from "@/components/hero-audio-player";
 import { HeroSlider } from "@/components/hero-slider";
@@ -13,7 +14,6 @@ import { GalleryStack } from "@/components/gallery-stack";
 import { ContactForm } from "@/components/contact-form";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { JsonLd } from "@/components/json-ld";
-import { MobileNav } from "@/components/mobile-nav";
 import { VisitorTracker } from "@/components/visitor-tracker";
 import { BrandLogo } from "@/components/brand-logo";
 import {
@@ -126,9 +126,10 @@ export default async function Home() {
       <VisitorTracker />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-2 py-2 md:px-4 md:py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass rounded-full px-4 py-2 md:px-6 md:py-3 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-2 py-1 md:px-4 md:py-2">
+        <div className="max-w-7xl mx-auto flex justify-center">
+          <div className="rounded-full px-6 py-1.5 md:px-8 md:py-2 flex items-center justify-between w-full max-w-5xl mx-auto bg-transparent border-none shadow-none md:backdrop-blur-xl md:border md:border-white/20 md:bg-white/70 md:shadow-lg dark:md:bg-black/80 dark:md:border-white/10 transition-all duration-300 relative">
+
             <Link href="/" className="hover:opacity-70 transition-opacity">
               <BrandLogo className="h-8 w-auto sm:h-10" />
             </Link>
@@ -141,7 +142,12 @@ export default async function Home() {
               <Link href="#contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
             </div>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
+              <div className="scale-75 md:scale-100 origin-right">
+                <ThemeToggle />
+              </div>
+              <div className="md:hidden">
+                <MobileNav artistName={artist?.name} showVideos={settings?.isYoutubeVisible} showShop={settings?.isShopVisible} />
+              </div>
             </div>
           </div>
         </div>

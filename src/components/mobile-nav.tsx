@@ -43,13 +43,14 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
     return (
         <div className="md:hidden">
             {/* Hamburger Button */}
+            {/* Hamburger Button - Floating Bottom Center */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors -ml-2"
+                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-background/80 backdrop-blur-md border border-foreground/10 shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 md:hidden group"
                 aria-label="Open menu"
                 aria-expanded={isOpen}
             >
-                <Menu size={24} />
+                <Menu size={28} className="text-foreground group-hover:text-accent-coral transition-colors" />
             </button>
 
             {/* Backdrop */}
@@ -62,18 +63,18 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
 
             {/* Left Sidebar Drawer */}
             <div
-                className={`fixed top-0 bottom-0 left-0 z-[201] w-[80%] max-w-sm bg-neutral-100 dark:bg-neutral-900 border-r border-black/5 dark:border-white/5 shadow-2xl transition-transform duration-300 ease-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+                className={`fixed top-0 bottom-0 left-0 z-[201] w-[65%] max-w-[260px] bg-gradient-to-b from-neutral-100/95 to-transparent dark:from-neutral-900/95 dark:to-transparent border-r border-black/5 dark:border-white/5 shadow-2xl transition-transform duration-300 ease-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
             >
-                <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-900">
+                <div className="flex flex-col h-full bg-transparent">
                     {/* Header with Close Button */}
                     <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5">
-                        <span className="font-display text-xl tracking-widest uppercase text-foreground/80">Menu</span>
+                        <span className="font-display text-lg tracking-widest uppercase text-foreground/80">Menu</span>
                         <button
                             onClick={() => setIsOpen(false)}
                             className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
                             aria-label="Close menu"
                         >
-                            <X size={20} className="text-foreground" />
+                            <X size={18} className="text-foreground" />
                         </button>
                     </div>
 
@@ -85,7 +86,7 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
                                     <Link
                                         href={link.href}
                                         onClick={() => { handleLinkClick(); }}
-                                        className="block py-2 text-2xl font-display tracking-wider text-foreground hover:text-accent-coral transition-colors"
+                                        className="block py-2 text-lg font-display tracking-wider text-foreground hover:text-accent-coral transition-colors"
                                     >
                                         {link.label}
                                     </Link>

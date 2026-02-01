@@ -133,30 +133,22 @@ model Artist {
   bio         String   @db.Text
   heroImage   String   @db.VarChar(500)
   
+  // Social Media Links
+  facebookUrl   String?  @db.VarChar(500)
+  instagramUrl  String?  @db.VarChar(500)
+  tiktokUrl     String?  @db.VarChar(500)
+  youtubeUrl    String?  @db.VarChar(500)
+  spotifyUrl    String?  @db.VarChar(500)
+  appleMusicUrl String?  @db.VarChar(500)
+  soundcloudUrl String?  @db.VarChar(500)
+  twitterUrl    String?  @db.VarChar(500)
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // Relations
   heroImages  HeroImage[]
   bioImages   BioImage[]
-  socialMedias SocialMedia[]
-}
-
-// ========================================
-// SOCIAL MEDIA (New Model)
-// ========================================
-model SocialMedia {
-  id        Int      @id @default(autoincrement())
-  artistId  Int
-  platform  String   @db.VarChar(50) // e.g., 'facebook', 'instagram'
-  url       String   @db.VarChar(500)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  
-  @@unique([artistId, platform])
 }
 
 // ========================================

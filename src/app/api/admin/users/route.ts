@@ -181,7 +181,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const id = parseInt(searchParams.get("id") || "0");
   const currentUser = (session.user as any)?.username || "Unknown";
   const currentUserId = parseInt((session.user as any)?.id);

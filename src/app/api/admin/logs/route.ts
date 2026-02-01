@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "50");
   const level = searchParams.get("level") || undefined;
@@ -78,7 +78,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const daysOld = searchParams.get("daysOld");
   const clearAll = searchParams.get("clearAll") === "true";
 
@@ -94,7 +94,7 @@ export async function DELETE(request: NextRequest) {
       // Clear logs older than X days
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - parseInt(daysOld));
-      
+
       const result = await prisma.systemLog.deleteMany({
         where: {
           timestamp: { lt: cutoffDate },

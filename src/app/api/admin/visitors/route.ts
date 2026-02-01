@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const period = searchParams.get("period") || "week"; // week, month, year
     const country = searchParams.get("country") || null; // Country filter
     const page = parseInt(searchParams.get("page") || "1");

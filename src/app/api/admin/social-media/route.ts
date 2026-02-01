@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+// Force sync timestamp: 2026-02-01 16:04
 
 export async function GET() {
     try {

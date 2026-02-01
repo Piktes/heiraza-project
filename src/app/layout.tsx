@@ -27,7 +27,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://heiraza.com"),
+  metadataBase: new URL((process.env.NEXT_PUBLIC_SITE_URL || "https://heiraza.com").split(',')[0].trim()),
   title: "HEIRAZA | Official Website",
   description: "Welcome to the official website of HEIRAZA.",
   keywords: ["Heiraza", "Music Artist", "Sonic Architect", "Concerts", "Live Shows", "Merch", "Tour Dates", "Events", "Electronic Music"],

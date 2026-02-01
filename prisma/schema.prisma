@@ -135,13 +135,28 @@ model Artist {
   
   // Social Media Links
   facebookUrl   String?  @db.VarChar(500)
+  isFacebookActive Boolean @default(true)
+  
   instagramUrl  String?  @db.VarChar(500)
+  isInstagramActive Boolean @default(true)
+  
   tiktokUrl     String?  @db.VarChar(500)
+  isTiktokActive Boolean @default(true)
+  
   youtubeUrl    String?  @db.VarChar(500)
+  isYoutubeActive Boolean @default(true)
+  
   spotifyUrl    String?  @db.VarChar(500)
+  isSpotifyActive Boolean @default(true)
+  
   appleMusicUrl String?  @db.VarChar(500)
+  isAppleMusicActive Boolean @default(true)
+  
   soundcloudUrl String?  @db.VarChar(500)
+  isSoundcloudActive Boolean @default(true)
+  
   twitterUrl    String?  @db.VarChar(500)
+  isTwitterActive Boolean @default(true)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

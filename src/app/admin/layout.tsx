@@ -39,7 +39,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     const username = (session?.user as any)?.username || session?.user?.name || "Admin";
 
     return (
-        <div className="min-h-screen gradient-warm-bg grain overflow-x-hidden">
+        <div className="min-h-screen w-full max-w-[100vw] gradient-warm-bg grain overflow-x-hidden">
             {/* Mobile Sidebar Drawer */}
             <MobileSidebarDrawer unreadCount={0} />
 

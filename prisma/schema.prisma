@@ -124,76 +124,57 @@ model Video {
   updatedAt   DateTime @updatedAt
 }
 
-// ========================================
-// ARTIST PROFILE
-// ========================================
-model Artist {
-  id          Int      @id @default(autoincrement())
-  name        String   @default("Heiraza")
-  bio         String   @db.Text
-  heroImage   String   @db.VarChar(500)
-  
-  // Social Media Links
-  facebookUrl   String?  @db.VarChar(500)
-  isFacebookActive Boolean @default(true)
-  
-  instagramUrl  String?  @db.VarChar(500)
-  isInstagramActive Boolean @default(true)
-  
-  tiktokUrl     String?  @db.VarChar(500)
-  isTiktokActive Boolean @default(true)
-  
-  youtubeUrl    String?  @db.VarChar(500)
-  isYoutubeActive Boolean @default(true)
-  
-  spotifyUrl    String?  @db.VarChar(500)
-  isSpotifyActive Boolean @default(true)
-  
-  appleMusicUrl String?  @db.VarChar(500)
-  isAppleMusicActive Boolean @default(true)
-  
-  soundcloudUrl String?  @db.VarChar(500)
-  isSoundcloudActive Boolean @default(true)
-  
-  twitterUrl    String?  @db.VarChar(500)
-  isTwitterActive Boolean @default(true)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  heroImages  HeroImage[]
-  bioImages   BioImage[]
-}
 
 // ========================================
 // HERO IMAGES (Multiple for Slider)
 // ========================================
 model HeroImage {
   id        Int      @id @default(autoincrement())
-  artistId  Int
   imageUrl  String   @db.LongText
   altText   String?  @db.VarChar(255)
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  
-  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
 }
 
 // ========================================
-// BIO IMAGES (Multiple for Bio Slider)
+// BIO (Biography Content & Images)
 // ========================================
-model BioImage {
+model Bio {
   id        Int      @id @default(autoincrement())
-  artistId  Int
-  imageUrl  String   @db.LongText
-  caption   String?  @db.VarChar(255)
+  content   String?  @db.LongText     // Main bio text
+  imageUrl  String?  @db.LongText     // Bio image (Primary/Fallback)
+  caption   String?  @db.VarChar(255) // Optional caption
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   
-  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  // Relations
+  images    BioImage[]
+}
+
+model BioImage {
+  id        Int      @id @default(autoincrement())
+  bioId     Int
+  bio       Bio      @relation(fields: [bioId], references: [id], onDelete: Cascade)
+  imageUrl  String   @db.LongText
+  caption   String?  @db.VarChar(255)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// ========================================
+// SOCIAL MEDIA (Links)
+// ========================================
+model SocialMedia {
+  id          Int      @id @default(autoincrement())
+  platform    String   @db.VarChar(50) // facebook, instagram, tiktok, etc.
+  url         String   @db.VarChar(500)
+  isVisible   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // ========================================

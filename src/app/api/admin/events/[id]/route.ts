@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 interface Params {
     params: { id: string };
@@ -29,10 +31,38 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     try {
         const id = parseInt(params.id);
         const body = await request.json();
+        let { imageUrl, ...rest } = body;
+
+        // Handle base64 image upload
+        if (imageUrl && imageUrl.startsWith("data:image")) {
+            try {
+                // Create uploads directory if it doesn't exist
+                const uploadsDir = path.join(process.cwd(), "public", "uploads", "events");
+                await mkdir(uploadsDir, { recursive: true });
+
+                // Extract base64 data
+                const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, "base64");
+
+                // Generate unique filename
+                const filename = `event-${Date.now()}.jpg`;
+                const filepath = path.join(uploadsDir, filename);
+
+                // Write file
+                await writeFile(filepath, buffer);
+
+                // Update imageUrl to relative path
+                imageUrl = `/uploads/events/${filename}`;
+            } catch (err) {
+                console.error("Error saving image:", err);
+                // Keep original imageUrl if saving fails, or handle error appropriately
+                // In this case, we might want to fail the request or just log it
+            }
+        }
 
         const event = await prisma.event.update({
             where: { id },
-            data: body,
+            data: { ...rest, imageUrl },
         });
 
         return NextResponse.json(event);

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   Music2, Plus, Trash2, GripVertical, Eye, EyeOff,
-  Upload, Link as LinkIcon, X
+  Upload, Link as LinkIcon, X, Pencil
 } from "lucide-react";
 
 // dnd-kit imports
@@ -42,8 +42,10 @@ interface TrackManagerProps {
   onAdd: (formData: FormData) => Promise<any>;
   onToggle: (formData: FormData) => Promise<any>;
   onDelete: (formData: FormData) => Promise<any>;
+
   onMove?: (formData: FormData) => Promise<any>;
   onReorder?: (orderedIds: number[]) => Promise<any>;
+  onEdit?: (formData: FormData) => Promise<any>;
 }
 
 // Sortable Track Item Component
@@ -52,11 +54,13 @@ function SortableTrackItem({
   index,
   onToggleClick,
   onDelete,
+  onEditStart,
 }: {
   track: Track;
   index: number;
   onToggleClick: (id: number, currentStatus: boolean) => void;
   onDelete: (formData: FormData) => Promise<any>;
+  onEditStart: (track: Track) => void;
 }) {
   const {
     attributes,
@@ -122,6 +126,15 @@ function SortableTrackItem({
       <div className="flex items-center gap-1">
         <button
           type="button"
+          onClick={() => onEditStart(track)}
+          className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+          title="Edit track"
+        >
+          <Pencil size={18} />
+        </button>
+
+        <button
+          type="button"
           onClick={() => onToggleClick(track.id, track.isActive)}
           className={`p-2 rounded-lg transition-colors ${track.isActive
             ? "hover:bg-muted text-accent-coral"
@@ -143,8 +156,9 @@ function SortableTrackItem({
   );
 }
 
-export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReorder }: TrackManagerProps) {
+export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReorder, onEdit }: TrackManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTrack, setEditingTrack] = useState<Track | null>(null);
   const [inputMethod, setInputMethod] = useState<"upload" | "url">("url");
   const [newTitle, setNewTitle] = useState("");
   const [newArtist, setNewArtist] = useState("Heiraza");
@@ -152,9 +166,23 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localTracks, setLocalTracks] = useState(tracks);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // When editing interaction starts
+  const handleEditStart = (track: Track) => {
+    setEditingTrack(track);
+    setNewTitle(track.title);
+    setNewArtist(track.artist || "Heiraza");
+    setNewUrl(track.externalLink || "");
+    setInputMethod(track.fileUrl ? "upload" : "url");
+    setCoverPreview(track.coverImage || null);
+    setIsAdding(true); // Re-use the add form
+  };
 
   const audioFileRef = useRef<HTMLInputElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync local tracks when props change
   useEffect(() => {
@@ -200,10 +228,32 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
     reader.readAsDataURL(file);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFileName(`${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+    } else {
+      setSelectedFileName(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!newTitle || (!newUrl && inputMethod === "url")) return;
 
     setIsSubmitting(true);
+    setUploadProgress(0);
+
+    // Simulate progress
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 500);
 
     const formData = new FormData();
     formData.set("title", newTitle);
@@ -219,27 +269,36 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
       formData.set("coverImage", coverPreview);
     }
 
-    await onAdd(formData);
+    if (editingTrack) {
+      formData.set("id", editingTrack.id.toString());
+      if (onEdit) await onEdit(formData);
+    } else {
+      await onAdd(formData);
+    }
 
-    setNewTitle("");
-    setNewArtist("Heiraza");
-    setNewUrl("");
-    setCoverPreview(null);
-    setIsAdding(false);
+    resetForm();
     setIsSubmitting(false);
-
-    if (audioFileRef.current) audioFileRef.current.value = "";
-    if (coverFileRef.current) coverFileRef.current.value = "";
   };
 
   const resetForm = () => {
-    setNewTitle("");
-    setNewArtist("Heiraza");
-    setNewUrl("");
-    setCoverPreview(null);
-    setIsAdding(false);
-    if (audioFileRef.current) audioFileRef.current.value = "";
-    if (coverFileRef.current) coverFileRef.current.value = "";
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setUploadProgress(100);
+
+    // Small delay to show 100%
+    setTimeout(() => {
+      setNewTitle("");
+      setNewArtist("Heiraza");
+      setNewUrl("");
+      setCoverPreview(null);
+      setSelectedFileName(null);
+      setIsAdding(false);
+      setEditingTrack(null);
+      setIsSubmitting(false);
+      setUploadProgress(0);
+
+      if (audioFileRef.current) audioFileRef.current.value = "";
+      if (coverFileRef.current) coverFileRef.current.value = "";
+    }, 500);
   };
 
   // Optimistic toggle handler
@@ -267,7 +326,7 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
 
   return (
     <div className="p-6">
-      {/* Add Button */}
+      {/* Add Button - Show only when not adding */}
       {!isAdding && (
         <div className="flex justify-end mb-4">
           <button
@@ -280,11 +339,11 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
         </div>
       )}
 
-      {/* Add Form */}
+      {/* Add/Edit Form */}
       {isAdding && (
-        <div className="p-6 rounded-xl border border-accent-coral/30 bg-accent-coral/5">
+        <div className="p-6 rounded-xl border border-accent-coral/30 bg-accent-coral/5 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-lg">Add New Track</h3>
+            <h3 className="font-medium text-lg">{editingTrack ? "Edit Track" : "Add New Track"}</h3>
             <button onClick={resetForm} className="p-1 hover:bg-muted rounded">
               <X size={18} />
             </button>
@@ -344,12 +403,30 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
                     className="input-field"
                   />
                 ) : (
-                  <div>
-                    <input ref={audioFileRef} type="file" accept="audio/*" className="hidden" id="audio-upload" />
+                  <div className="space-y-3">
+                    <input
+                      ref={audioFileRef}
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      id="audio-upload"
+                      onChange={handleFileSelect}
+                    />
                     <label htmlFor="audio-upload" className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-accent-coral/50 hover:bg-accent-coral/5 transition-colors">
                       <Upload size={20} className="text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Click to upload MP3</span>
+                      <span className="text-sm text-muted-foreground">
+                        {editingTrack && editingTrack.fileUrl && !selectedFileName
+                          ? "Click to replace current file"
+                          : "Click to upload MP3"}
+                      </span>
                     </label>
+
+                    {selectedFileName && (
+                      <div className="flex items-center gap-2 text-sm text-accent-coral bg-accent-coral/10 p-2 rounded-lg">
+                        <Music2 size={14} />
+                        <span className="truncate flex-1">{selectedFileName}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -379,25 +456,43 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
             </div>
           </div>
 
-          <div className="flex items-center gap-3 mt-6">
-            <button
-              onClick={handleSubmit}
-              disabled={!newTitle || (inputMethod === "url" && !newUrl) || isSubmitting}
-              className="btn-primary text-sm disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <Plus size={16} />
-                  Add Track
-                </>
-              )}
-            </button>
-            <button onClick={resetForm} className="btn-secondary text-sm">Cancel</button>
+          <div className="flex flex-col gap-3 mt-6">
+            {/* Progress Bar */}
+            {isSubmitting && (
+              <div className="w-full space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Uploading...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent-coral transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSubmit}
+                disabled={!newTitle || (inputMethod === "url" && !newUrl) || isSubmitting}
+                className="btn-primary text-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    {editingTrack ? <Pencil size={16} /> : <Plus size={16} />}
+                    {editingTrack ? "Update Track" : "Add Track"}
+                  </>
+                )}
+              </button>
+              <button onClick={resetForm} className="btn-secondary text-sm">Cancel</button>
+            </div>
           </div>
         </div>
       )}
@@ -421,6 +516,7 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
                   index={index}
                   onToggleClick={handleToggleClick}
                   onDelete={onDelete}
+                  onEditStart={handleEditStart}
                 />
               ))}
             </div>

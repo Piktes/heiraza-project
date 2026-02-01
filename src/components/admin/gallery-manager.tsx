@@ -217,6 +217,7 @@ export function GalleryManager({
                                             alt={`Selected ${idx + 1}`}
                                             fill
                                             className="object-contain bg-black/5"
+                                            sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
                                         />
                                         <button
                                             onClick={() => removeSelectedImage(idx)}
@@ -327,6 +328,7 @@ export function GalleryManager({
                                 alt={image.title || "Gallery image"}
                                 fill
                                 className="object-contain bg-black/10 w-full h-full"
+                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                             />
 
                             {/* Overlay with actions */}

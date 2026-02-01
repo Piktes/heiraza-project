@@ -4,13 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Loader2, X, Search } from "lucide-react";
 
 interface GeoLocation {
-    geonameId: number;
+    id: number;
     name: string;
-    adminName1: string; // State/Province
-    countryName: string;
-    countryCode: string;
-    lat: string;
-    lng: string;
+    country?: string;
+    admin1?: string; // State
 }
 
 interface LocationAutocompleteProps {
@@ -19,9 +16,6 @@ interface LocationAutocompleteProps {
     initialCountry?: string;
     disabled?: boolean;
 }
-
-// Geonames demo account - for production, create your own at geonames.org
-const GEONAMES_USERNAME = "demo";
 
 export function LocationAutocomplete({
     onSelect,
@@ -51,7 +45,7 @@ export function LocationAutocomplete({
         setLoading(true);
         try {
             const response = await fetch(
-                `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(searchQuery)}&maxRows=8&featureClass=P&username=${GEONAMES_USERNAME}`
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=10&language=en&format=json`
             );
 
             if (!response.ok) {
@@ -60,8 +54,8 @@ export function LocationAutocomplete({
 
             const data = await response.json();
 
-            if (data.geonames) {
-                setResults(data.geonames);
+            if (data.results) {
+                setResults(data.results);
             } else {
                 setResults([]);
             }
@@ -98,11 +92,13 @@ export function LocationAutocomplete({
     // Handle location selection
     const handleSelect = (location: GeoLocation) => {
         const city = location.name;
-        const country = location.countryName;
+        // Use admin1 (State) if available, but prioritize Country for the second field
+        const country = location.country || "";
+        const displayLabel = country ? `${city}, ${country}` : city;
 
         setSelectedCity(city);
         setSelectedCountry(country);
-        setQuery(`${city}, ${country}`);
+        setQuery(displayLabel);
         setIsOpen(false);
         setResults([]);
 
@@ -197,7 +193,7 @@ export function LocationAutocomplete({
                     {results.length > 0 ? (
                         <ul className="divide-y divide-border max-h-64 overflow-y-auto">
                             {results.map((location) => (
-                                <li key={location.geonameId}>
+                                <li key={location.id}>
                                     <button
                                         type="button"
                                         onClick={() => handleSelect(location)}
@@ -207,14 +203,14 @@ export function LocationAutocomplete({
                                         <div>
                                             <p className="font-medium">
                                                 {location.name}
-                                                {location.adminName1 && (
+                                                {location.admin1 && location.admin1 !== location.name && (
                                                     <span className="text-muted-foreground font-normal">
-                                                        , {location.adminName1}
+                                                        , {location.admin1}
                                                     </span>
                                                 )}
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                {location.countryName}
+                                                {location.country}
                                             </p>
                                         </div>
                                     </button>

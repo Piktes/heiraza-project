@@ -9,11 +9,7 @@ export const dynamic = "force-dynamic";
 // DATA FETCHING
 // ========================================
 async function getHeroImages() {
-    const artist = await prisma.artist.findFirst();
-    if (!artist) return [];
-
     return await prisma.heroImage.findMany({
-        where: { artistId: artist.id },
         orderBy: { sortOrder: "asc" },
     });
 }
@@ -28,10 +24,6 @@ async function getSiteSettings() {
     return settings;
 }
 
-async function getArtist() {
-    return await prisma.artist.findFirst();
-}
-
 // ========================================
 // SERVER ACTIONS
 // ========================================
@@ -39,9 +31,6 @@ async function addHeroImages(formData: FormData) {
     "use server";
     const { writeFile, mkdir } = await import("fs/promises");
     const path = await import("path");
-
-    const artist = await prisma.artist.findFirst();
-    if (!artist) return { success: false, error: "No artist found" };
 
     const imageDataList = formData.getAll("imageData") as string[];
 
@@ -57,7 +46,6 @@ async function addHeroImages(formData: FormData) {
 
     // Get current max sort order
     const lastImage = await prisma.heroImage.findFirst({
-        where: { artistId: artist.id },
         orderBy: { sortOrder: "desc" },
     });
     let sortOrder = (lastImage?.sortOrder || 0) + 1;
@@ -74,7 +62,6 @@ async function addHeroImages(formData: FormData) {
 
         await prisma.heroImage.create({
             data: {
-                artistId: artist.id,
                 imageUrl: `/uploads/hero/${filename}`,
                 sortOrder: sortOrder++,
                 isActive: true,
@@ -127,11 +114,7 @@ async function moveHeroImage(formData: FormData) {
     const id = parseInt(formData.get("id") as string);
     const direction = formData.get("direction") as "up" | "down";
 
-    const artist = await prisma.artist.findFirst();
-    if (!artist) return;
-
     const images = await prisma.heroImage.findMany({
-        where: { artistId: artist.id },
         orderBy: { sortOrder: "asc" },
     });
 
@@ -185,10 +168,9 @@ async function updateSliderSpeed(formData: FormData) {
 // PAGE COMPONENT
 // ========================================
 export default async function HeroEditorPage() {
-    const [heroImages, settings, artist] = await Promise.all([
+    const [heroImages, settings] = await Promise.all([
         getHeroImages(),
         getSiteSettings(),
-        getArtist(),
     ]);
 
     const activeCount = heroImages.filter(img => img.isActive).length;

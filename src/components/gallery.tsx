@@ -117,6 +117,7 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
                     alt={image.title || `Gallery image ${idx + 1}`}
                     fill
                     className="object-cover p-0 transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
 
                   {/* Hover Overlay */}
@@ -192,6 +193,8 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
                 alt={filteredImages[selectedImage].title || "Gallery image"}
                 fill
                 className="object-contain"
+                sizes="100vw"
+                priority
               />
             </div>
 

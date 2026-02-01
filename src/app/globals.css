@@ -8,6 +8,7 @@
      LIGHT MODE - Warm Cream Aesthetic
      ======================================== */
   :root {
+    color-scheme: light;
     --background: 40 33% 98%;
     --foreground: 30 10% 15%;
     --card: 40 30% 96%;
@@ -30,6 +31,7 @@
      DARK MODE - Rich Espresso/Forest
      ======================================== */
   .dark {
+    color-scheme: dark;
     --background: 30 15% 8%;
     --foreground: 35 20% 92%;
     --card: 30 12% 12%;

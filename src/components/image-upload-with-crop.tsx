@@ -3,12 +3,12 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Upload, X, Check, RotateCcw, Move } from "lucide-react";
-import { 
-  getCroppedImg, 
-  fileToDataUrl, 
-  getImageDimensions, 
+import {
+  getCroppedImg,
+  fileToDataUrl,
+  getImageDimensions,
   calculateInitialCropArea,
-  type CropArea 
+  type CropArea
 } from "@/lib/image-utils";
 
 interface ImageUploadWithCropProps {
@@ -37,7 +37,7 @@ export function ImageUploadWithCrop({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -60,12 +60,12 @@ export function ImageUploadWithCrop({
     try {
       const dataUrl = await fileToDataUrl(file);
       setOriginalImage(dataUrl);
-      
+
       // Get image dimensions and calculate initial crop area
       const dimensions = await getImageDimensions(dataUrl);
       const initialCrop = calculateInitialCropArea(dimensions.width, dimensions.height, aspect);
       setCropArea(initialCrop);
-      
+
       setIsCropping(true);
     } catch (error) {
       console.error("Error loading image:", error);
@@ -77,11 +77,11 @@ export function ImageUploadWithCrop({
     if (!containerRef.current) return;
     e.preventDefault();
     setIsDragging(true);
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const mouseX = ((e.clientX - rect.left) / rect.width) * 100;
     const mouseY = ((e.clientY - rect.top) / rect.height) * 100;
-    
+
     setDragStart({
       x: mouseX - cropArea.x,
       y: mouseY - cropArea.y,
@@ -90,18 +90,18 @@ export function ImageUploadWithCrop({
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const mouseX = ((e.clientX - rect.left) / rect.width) * 100;
     const mouseY = ((e.clientY - rect.top) / rect.height) * 100;
-    
+
     let newX = mouseX - dragStart.x;
     let newY = mouseY - dragStart.y;
-    
+
     // Constrain within bounds
     newX = Math.max(0, Math.min(100 - cropArea.width, newX));
     newY = Math.max(0, Math.min(100 - cropArea.height, newY));
-    
+
     setCropArea(prev => ({
       ...prev,
       x: newX,
@@ -115,12 +115,12 @@ export function ImageUploadWithCrop({
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!containerRef.current || e.touches.length !== 1) return;
-    
+
     const touch = e.touches[0];
     const rect = containerRef.current.getBoundingClientRect();
     const touchX = ((touch.clientX - rect.left) / rect.width) * 100;
     const touchY = ((touch.clientY - rect.top) / rect.height) * 100;
-    
+
     setIsDragging(true);
     setDragStart({
       x: touchX - cropArea.x,
@@ -131,18 +131,18 @@ export function ImageUploadWithCrop({
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging || !containerRef.current || e.touches.length !== 1) return;
     e.preventDefault();
-    
+
     const touch = e.touches[0];
     const rect = containerRef.current.getBoundingClientRect();
     const touchX = ((touch.clientX - rect.left) / rect.width) * 100;
     const touchY = ((touch.clientY - rect.top) / rect.height) * 100;
-    
+
     let newX = touchX - dragStart.x;
     let newY = touchY - dragStart.y;
-    
+
     newX = Math.max(0, Math.min(100 - cropArea.width, newX));
     newY = Math.max(0, Math.min(100 - cropArea.height, newY));
-    
+
     setCropArea(prev => ({
       ...prev,
       x: newX,
@@ -156,17 +156,17 @@ export function ImageUploadWithCrop({
 
   const applyCrop = useCallback(async () => {
     if (!originalImage) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       // Use the canvas-based cropping utility
       const result = await getCroppedImg(originalImage, cropArea, maxWidth);
-      
+
       setPreview(result.dataUrl);
       setIsCropping(false);
       setOriginalImage(null);
-      
+
       // Pass the cropped file to parent
       onUpload(result.file, result.dataUrl);
     } catch (error) {
@@ -179,7 +179,7 @@ export function ImageUploadWithCrop({
 
   const resetCrop = useCallback(async () => {
     if (!originalImage) return;
-    
+
     try {
       const dimensions = await getImageDimensions(originalImage);
       const initialCrop = calculateInitialCropArea(dimensions.width, dimensions.height, aspect);
@@ -209,16 +209,16 @@ export function ImageUploadWithCrop({
 
   const getAspectLabel = () => {
     if (aspect === 1) return "1:1 (Square)";
-    if (aspect === 16/9) return "16:9 (Landscape)";
-    if (aspect === 4/5) return "4:5 (Portrait)";
-    if (aspect === 9/16) return "9:16 (Vertical)";
+    if (aspect === 16 / 9) return "16:9 (Landscape)";
+    if (aspect === 4 / 5) return "4:5 (Portrait)";
+    if (aspect === 9 / 16) return "9:16 (Vertical)";
     return `${aspect.toFixed(2)}`;
   };
 
   return (
     <div className={`space-y-3 ${className}`}>
       <label className="block text-sm font-medium">{label}</label>
-      
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -240,10 +240,10 @@ export function ImageUploadWithCrop({
             </span>
             <span>Aspect: {getAspectLabel()}</span>
           </div>
-          
+
           <div
             ref={containerRef}
-            className="relative bg-black rounded-xl overflow-hidden select-none"
+            className="relative bg-black rounded-xl overflow-hidden select-none touch-none"
             style={{ aspectRatio: aspect }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -260,7 +260,7 @@ export function ImageUploadWithCrop({
               className="absolute inset-0 w-full h-full object-contain opacity-40 pointer-events-none"
               draggable={false}
             />
-            
+
             {/* Crop Area Overlay */}
             <div
               className="absolute border-2 border-white cursor-move"
@@ -288,13 +288,13 @@ export function ImageUploadWithCrop({
                   draggable={false}
                 />
               </div>
-              
+
               {/* Corner Handles */}
               <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white rounded-full shadow-md" />
               <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white rounded-full shadow-md" />
               <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white rounded-full shadow-md" />
               <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white rounded-full shadow-md" />
-              
+
               {/* Rule of Thirds Grid */}
               <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
                 {[...Array(9)].map((_, i) => (
@@ -388,7 +388,7 @@ export function ImageUploadWithCrop({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="w-full border-2 border-dashed border-border rounded-xl hover:border-accent-coral/50 hover:bg-accent-coral/5 transition-all"
-          style={{ aspectRatio: aspect > 1.5 ? 16/9 : aspect }}
+          style={{ aspectRatio: aspect > 1.5 ? 16 / 9 : aspect }}
         >
           <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
             <Upload size={32} className="mb-3" />

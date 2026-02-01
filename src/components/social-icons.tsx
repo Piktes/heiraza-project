@@ -5,31 +5,33 @@ import { RiTwitterXFill } from "react-icons/ri";
 import { SiTiktok } from "react-icons/si";
 
 interface SocialIconProps {
-  platform: "facebook" | "instagram" | "tiktok" | "youtube" | "spotify" | "twitter" | "x" | "soundcloud" | "appleMusic";
+  platform: "facebook" | "instagram" | "tiktok" | "youtube" | "spotify" | "twitter" | "x" | "soundcloud" | "appleMusic" | string;
   size?: number;
   className?: string;
 }
 
 export function SocialIcon({ platform, size = 20, className = "" }: SocialIconProps) {
   const iconProps = { size, className };
-  
-  switch (platform) {
-    case "facebook":
+
+  // Normalize platform string
+  const normalizedKey = platform.toLowerCase();
+
+  switch (true) {
+    case normalizedKey.includes("facebook"):
       return <FaFacebook {...iconProps} />;
-    case "instagram":
+    case normalizedKey.includes("instagram"):
       return <FaInstagram {...iconProps} />;
-    case "tiktok":
+    case normalizedKey.includes("tiktok"):
       return <SiTiktok {...iconProps} />;
-    case "youtube":
+    case normalizedKey.includes("youtube"):
       return <FaYoutube {...iconProps} />;
-    case "spotify":
+    case normalizedKey.includes("spotify"):
       return <FaSpotify {...iconProps} />;
-    case "twitter":
-    case "x":
+    case normalizedKey.includes("twitter") || normalizedKey.includes("x"):
       return <RiTwitterXFill {...iconProps} />;
-    case "soundcloud":
+    case normalizedKey.includes("soundcloud"):
       return <FaSoundcloud {...iconProps} />;
-    case "appleMusic":
+    case normalizedKey.includes("applemusic") || normalizedKey.includes("apple"):
       return <FaApple {...iconProps} />;
     default:
       return null;
@@ -38,15 +40,14 @@ export function SocialIcon({ platform, size = 20, className = "" }: SocialIconPr
 
 interface SocialLinkProps {
   href: string | null | undefined;
-  platform: SocialIconProps["platform"];
+  platform: string;
   size?: number;
   className?: string;
-  showOnHover?: boolean;
 }
 
-export function SocialLink({ href, platform, size = 18, className = "", showOnHover = false }: SocialLinkProps) {
+export function SocialLink({ href, platform, size = 18, className = "" }: SocialLinkProps) {
   if (!href) return null;
-  
+
   const brandColors: Record<string, string> = {
     facebook: "hover:text-[#1877F2]",
     instagram: "hover:text-[#E4405F]",
@@ -56,50 +57,89 @@ export function SocialLink({ href, platform, size = 18, className = "", showOnHo
     twitter: "hover:text-foreground",
     x: "hover:text-foreground",
     soundcloud: "hover:text-[#FF5500]",
-    appleMusic: "hover:text-[#FA243C]",
+    applemusic: "hover:text-[#FA243C]", // lowercase key for safety
+    appleMusic: "hover:text-[#FA243C]"
   };
-  
+
+  // Safe color lookup
+  const colorClass = brandColors[platform] || brandColors[platform.toLowerCase()] || "hover:text-foreground";
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`w-10 h-10 rounded-full glass flex items-center justify-center transition-all hover:scale-110 ${brandColors[platform]} ${className}`}
-      aria-label={platform.charAt(0).toUpperCase() + platform.slice(1)}
+      className={`w-10 h-10 rounded-full glass flex items-center justify-center transition-all hover:scale-110 ${colorClass} ${className}`}
+      aria-label={platform}
     >
       <SocialIcon platform={platform} size={size} />
     </a>
   );
 }
 
+// New Interface for DB Row
+interface SocialMediaLink {
+  id?: number;
+  platform: string;
+  url: string;
+  isVisible: boolean;
+}
+
+// Interface for Flat Artist Data (for compatibility)
+interface ArtistSocials {
+  facebookUrl?: string | null;
+  instagramUrl?: string | null;
+  tiktokUrl?: string | null;
+  youtubeUrl?: string | null;
+  spotifyUrl?: string | null;
+  twitterUrl?: string | null;
+  soundcloudUrl?: string | null;
+  appleMusicUrl?: string | null;
+  [key: string]: string | null | undefined;
+}
+
 interface SocialLinksRowProps {
-  artist: {
-    facebookUrl?: string | null;
-    instagramUrl?: string | null;
-    tiktokUrl?: string | null;
-    youtubeUrl?: string | null;
-    spotifyUrl?: string | null;
-    twitterUrl?: string | null;
-    soundcloudUrl?: string | null;
-    appleMusicUrl?: string | null;
-  } | null;
+  links?: SocialMediaLink[] | null;
+  artist?: ArtistSocials | null;
   size?: number;
   className?: string;
 }
 
-export function SocialLinksRow({ artist, size = 18, className = "" }: SocialLinksRowProps) {
-  if (!artist) return null;
-  
+export function SocialLinksRow({ links, artist, size = 18, className = "" }: SocialLinksRowProps) {
+  // Normalize data: Prefer 'links' array, but fallback to 'artist' flat fields if provided
+  let displayLinks: { platform: string; url: string }[] = [];
+
+  if (links && links.length > 0) {
+    displayLinks = links.filter(l => l.isVisible).map(l => ({ platform: l.platform, url: l.url }));
+  } else if (artist) {
+    const platforms = [
+      { key: "spotifyUrl", platform: "spotify" },
+      { key: "appleMusicUrl", platform: "appleMusic" },
+      { key: "youtubeUrl", platform: "youtube" },
+      { key: "instagramUrl", platform: "instagram" },
+      { key: "tiktokUrl", platform: "tiktok" },
+      { key: "twitterUrl", platform: "twitter" },
+      { key: "facebookUrl", platform: "facebook" },
+      { key: "soundcloudUrl", platform: "soundcloud" },
+    ];
+
+    displayLinks = platforms
+      .filter(p => artist[p.key])
+      .map(p => ({ platform: p.platform, url: artist[p.key] as string }));
+  }
+
+  if (displayLinks.length === 0) return null;
+
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <SocialLink href={artist.facebookUrl} platform="facebook" size={size} />
-      <SocialLink href={artist.instagramUrl} platform="instagram" size={size} />
-      <SocialLink href={artist.tiktokUrl} platform="tiktok" size={size} />
-      <SocialLink href={artist.youtubeUrl} platform="youtube" size={size} />
-      <SocialLink href={artist.spotifyUrl} platform="spotify" size={size} />
-      <SocialLink href={artist.twitterUrl} platform="x" size={size} />
-      <SocialLink href={artist.soundcloudUrl} platform="soundcloud" size={size} />
-      <SocialLink href={artist.appleMusicUrl} platform="appleMusic" size={size} />
+      {displayLinks.map(link => (
+        <SocialLink
+          key={link.platform}
+          href={link.url}
+          platform={link.platform}
+          size={size}
+        />
+      ))}
     </div>
   );
 }

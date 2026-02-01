@@ -13,26 +13,43 @@ import { SpecialEventPopup } from "@/components/special-event-popup";
 import { GalleryStack } from "@/components/gallery-stack";
 import { ContactForm } from "@/components/contact-form";
 import { NewsletterForm } from "@/components/newsletter-form";
-import { JsonLd } from "@/components/json-ld";
+// import { JsonLd } from "@/components/json-ld"; // Temporarily disabled or needs refactoring
 import { VisitorTracker } from "@/components/visitor-tracker";
 import { BrandLogo } from "@/components/brand-logo";
 import {
-  ArrowRight, Mail, MapPin, Calendar, Sparkles, MessageCircle,
-  Music2, ImageIcon,
+  ArrowRight, Mail, MessageCircle, Calendar, Sparkles, Music2, MapPin
 } from "lucide-react";
 
 export const revalidate = 60;
 
+// ========================================
+// DATA FETCHING
+// ========================================
 async function getSiteSettings() {
   return await prisma.siteSettings.findFirst();
 }
 
-async function getArtist() {
-  return await prisma.artist.findFirst({
+async function getBio() {
+  return await prisma.bio.findFirst({
     include: {
-      heroImages: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-      bioImages: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-    },
+      images: {
+        orderBy: { sortOrder: "asc" }
+      }
+    }
+  });
+}
+
+async function getSocialLinks() {
+  return await prisma.socialMedia.findMany({
+    where: { isVisible: true },
+    orderBy: { sortOrder: "asc" }
+  });
+}
+
+async function getHeroImages() {
+  return await prisma.heroImage.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" }
   });
 }
 
@@ -81,16 +98,19 @@ async function getActiveSpecialEvent() {
 }
 
 export default async function Home() {
-  const [settings, artist, tracks, videos, events, products, galleryImages, specialEvent] = await Promise.all([
-    getSiteSettings(), getArtist(), getActiveTracks(), getActiveVideos(),
-    getUpcomingEvents(), getProducts(), getGalleryImages(), getActiveSpecialEvent(),
+  const [
+    settings, bio, socialLinks, heroImages,
+    tracks, videos, events, products, galleryImages, specialEvent
+  ] = await Promise.all([
+    getSiteSettings(), getBio(), getSocialLinks(), getHeroImages(),
+    getActiveTracks(), getActiveVideos(), getUpcomingEvents(),
+    getProducts(), getGalleryImages(), getActiveSpecialEvent(),
   ]);
+
+  const artistName = "Heiraza"; // Hardcoded for now as requested for Single Artist
 
   // ========================================
   // DYNAMIC SECTION COLORING
-  // Top Blend: First 2 sections MATCH (Hero + next = warm bg)
-  // Bottom Blend: Last section = NO BG (matches Footer)
-  // Middle: Alternate for contrast
   // ========================================
   const visibleSections = [
     { id: 'hero', visible: true },
@@ -103,25 +123,19 @@ export default async function Home() {
     { id: 'newsletter', visible: true },
   ].filter(s => s.visible);
 
-  // Seamless Top & Bottom color logic ("Sandwich" pattern)
   const getSectionBg = (sectionId: string) => {
     const idx = visibleSections.findIndex(s => s.id === sectionId);
     const len = visibleSections.length;
-
-    // TOP BLEND: Hero (idx 0) + First section (idx 1) = SAME (warm bg)
     if (idx <= 1) return 'gradient-warm-bg';
-
-    // BOTTOM BLEND: Last section matches Footer (no bg)
     if (idx === len - 1) return '';
-
-    // CHAIN: Middle sections alternate (starting from idx 2 = dark)
-    // idx 2 = dark (no bg), idx 3 = warm, idx 4 = dark, etc.
     return (idx % 2 === 0) ? '' : 'gradient-warm-bg';
   };
 
+  const spotifyLink = socialLinks.find(l => l.platform.toLowerCase().includes('spotify'))?.url;
+
   return (
     <main className="relative grain">
-      <JsonLd artist={artist} />
+      {/* <JsonLd artist={artist} /> */}
       <SpecialEventPopup event={specialEvent} />
       <VisitorTracker />
 
@@ -146,7 +160,7 @@ export default async function Home() {
                 <ThemeToggle />
               </div>
               <div className="md:hidden">
-                <MobileNav artistName={artist?.name} showVideos={settings?.isYoutubeVisible} showShop={settings?.isShopVisible} />
+                <MobileNav artistName={artistName} showVideos={settings?.isYoutubeVisible} showShop={settings?.isShopVisible} />
               </div>
             </div>
           </div>
@@ -156,8 +170,8 @@ export default async function Home() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden gradient-warm-bg">
         <HeroSlider
-          images={artist?.heroImages || []}
-          fallbackImage={artist?.heroImage}
+          images={heroImages}
+          fallbackImage={bio?.imageUrl || ""} // Fallback to Bio image if no hero images
           interval={settings?.heroSliderInterval || 5000}
           kenBurnsEffect={settings?.heroKenBurnsEffect ?? true}
         />
@@ -169,27 +183,28 @@ export default async function Home() {
             Welcome to the world of
           </p>
           <h1 className="opacity-0 animate-fade-in animate-delay-100 font-display text-display-xl tracking-widest uppercase">
-            {artist?.name || "Heiraza"}
+            {artistName}
           </h1>
           <p className="opacity-0 animate-fade-in animate-delay-200 mt-8 text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed font-serif italic">
             Experience the sound that moves souls
           </p>
           <div className="opacity-0 animate-fade-in animate-delay-300 mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="#concerts" className="btn-primary">View Concerts</a>
-            {artist?.spotifyUrl && (
-              <a href={artist.spotifyUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary flex items-center gap-2">
+            {spotifyLink && (
+              <a href={spotifyLink} target="_blank" rel="noopener noreferrer" className="btn-secondary flex items-center gap-2">
                 <Music2 size={18} /> Listen Now
               </a>
             )}
           </div>
           {settings?.isSocialLinksVisible && (
             <div className="opacity-0 animate-fade-in animate-delay-400 mt-10 flex items-center justify-center">
-              <SocialLinksRow artist={artist} size={18} />
+              <SocialLinksRow links={socialLinks} size={18} />
             </div>
           )}
           <HeroAudioPlayer tracks={tracks} isVisible={settings?.isAudioPlayerVisible ?? true} />
         </div>
 
+        {/* Scroll Indicator */}
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-0 animate-fade-in animate-delay-600 z-30">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <div className="w-px h-12 bg-gradient-to-b from-muted-foreground/50 to-transparent" />
@@ -288,11 +303,28 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Photo Gallery - GalleryStack has its own section wrapper */}
+      {/* Gallery */}
       {galleryImages.length > 0 && <GalleryStack images={galleryImages} className={getSectionBg('gallery')} />}
 
-      {/* About */}
-      <BioSection artist={artist} bioImages={artist?.bioImages || []} className={getSectionBg('about')} />
+      {/* About (Bio) */}
+      <BioSection
+        artist={{
+          name: artistName,
+          bio: bio?.content || "",
+          heroImage: heroImages[0]?.imageUrl || bio?.imageUrl, // Use first hero image or bio image as fallback
+          // Map social links to flat structure
+          facebookUrl: socialLinks.find(l => l.platform.toLowerCase().includes('facebook'))?.url,
+          instagramUrl: socialLinks.find(l => l.platform.toLowerCase().includes('instagram'))?.url,
+          tiktokUrl: socialLinks.find(l => l.platform.toLowerCase().includes('tiktok'))?.url,
+          youtubeUrl: socialLinks.find(l => l.platform.toLowerCase().includes('youtube'))?.url,
+          spotifyUrl: socialLinks.find(l => l.platform.toLowerCase().includes('spotify'))?.url,
+          twitterUrl: socialLinks.find(l => l.platform.toLowerCase().includes('twitter'))?.url,
+          soundcloudUrl: socialLinks.find(l => l.platform.toLowerCase().includes('soundcloud'))?.url,
+          appleMusicUrl: socialLinks.find(l => l.platform.toLowerCase().includes('apple'))?.url,
+        }}
+        bioImages={bio?.images || []}
+        className={getSectionBg('about')}
+      />
 
       {/* Contact */}
       <section id="contact" className={`section-padding px-6 ${getSectionBg('contact')}`}>
@@ -312,7 +344,7 @@ export default async function Home() {
                   <div><p className="text-sm text-muted-foreground">Booking</p><p className="font-medium">booking@heiraza.com</p></div>
                 </div>
               </div>
-              {settings?.isSocialLinksVisible && (<div className="mt-8"><p className="text-sm text-muted-foreground mb-4">Follow on social media</p><SocialLinksRow artist={artist} size={18} /></div>)}
+              {settings?.isSocialLinksVisible && (<div className="mt-8"><p className="text-sm text-muted-foreground mb-4">Follow on social media</p><SocialLinksRow links={socialLinks} size={18} /></div>)}
             </div>
             <ContactForm
               successImage={settings?.contactSuccessImage}
@@ -345,9 +377,9 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div className="md:col-span-2">
-              <Link href="/" className="font-display text-3xl tracking-widest uppercase">{artist?.name || "Heiraza"}</Link>
+              <Link href="/" className="font-display text-3xl tracking-widest uppercase">{artistName}</Link>
               <p className="mt-4 text-muted-foreground max-w-sm">Experience the sound that moves souls. Music, events, and exclusive merch.</p>
-              {settings?.isSocialLinksVisible && (<div className="mt-6"><SocialLinksRow artist={artist} size={18} /></div>)}
+              {settings?.isSocialLinksVisible && (<div className="mt-6"><SocialLinksRow links={socialLinks} size={18} /></div>)}
             </div>
             <div>
               <h4 className="font-display text-sm tracking-wider uppercase mb-4">Quick Links</h4>
@@ -361,7 +393,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} {artist?.name || "Heiraza"}. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} {artistName}. All rights reserved.</p>
             <p className="text-sm text-muted-foreground">Made with ♥ for the music</p>
           </div>
         </div>

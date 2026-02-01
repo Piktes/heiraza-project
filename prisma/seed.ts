@@ -11,29 +11,82 @@ async function main() {
   // Clear existing data (in correct order for foreign keys)
   console.log("🗑️  Clearing existing data...");
   await prisma.systemLog.deleteMany();
-  await prisma.adminUser.deleteMany();
+  // await prisma.adminUser.deleteMany(); // PRESERVE ADMIN USER
   await prisma.track.deleteMany();
   await prisma.video.deleteMany();
   await prisma.galleryImage.deleteMany();
   await prisma.specialEvent.deleteMany();
-  await prisma.bioImage.deleteMany();
-  await prisma.heroImage.deleteMany();
   await prisma.message.deleteMany();
   await prisma.subscriber.deleteMany();
   await prisma.product.deleteMany();
   await prisma.event.deleteMany();
-  await prisma.artist.deleteMany();
-  await prisma.siteSettings.deleteMany();
   await prisma.emailSignature.deleteMany();
-  console.log("   ✓ All tables cleared\n");
+  await prisma.socialMedia.deleteMany();
+  await prisma.bio.deleteMany();
+  await prisma.heroImage.deleteMany();
+  // Clear specific tables
+  // Adjust based on your schema. Careful in prod!
+
+  // Clean up order matters for foreign keys if they existed, but we have few relations now.
+  // const deleteSocial = prisma.socialMedia.deleteMany();
+  // const deleteBio = prisma.bio.deleteMany();
+  // ...
+
+  console.log('Seeding database...');
+
+  // 1. Ensure Bio exists
+  const bio = await prisma.bio.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      content: "Heiraza is an emerging artist redefining the boundaries of modern sound...",
+      imageUrl: "/uploads/bio/default-bio.jpg",
+      isActive: true
+    }
+  });
+
+  // 2. Ensure Social Media Links exist
+  const platforms = [
+    { platform: 'facebook', url: 'https://facebook.com', isVisible: true },
+    { platform: 'instagram', url: 'https://instagram.com', isVisible: true },
+    { platform: 'youtube', url: 'https://youtube.com', isVisible: true },
+    { platform: 'spotify', url: 'https://spotify.com', isVisible: true },
+  ];
+
+  for (const p of platforms) {
+    await prisma.socialMedia.create({
+      data: p
+    });
+  }
+
+  // 3. Ensure Site Settings exist
+  const settings = await prisma.siteSettings.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      isAudioPlayerVisible: true,
+      isShopVisible: true,
+      isYoutubeVisible: true,
+      heroSliderInterval: 5000
+    }
+  });
+
+  console.log('Seeding finished.');
+
 
   // ========================================
   // ADMIN USER (with bcrypt hashed password)
   // ========================================
   console.log("👤 Creating Admin User...");
   const passwordHash = await bcrypt.hash("Sahs2207$", 12);
-  const adminUser = await prisma.adminUser.create({
-    data: {
+  const adminUser = await prisma.adminUser.upsert({
+    where: { username: "Sahadmin" },
+    update: {
+      passwordHash: passwordHash,
+      // email: "admin@heiraza.com", // Optional update
+      // isActive: true
+    },
+    create: {
       username: "Sahadmin",
       passwordHash: passwordHash,
       email: "admin@heiraza.com",
@@ -53,52 +106,6 @@ async function main() {
       details: "Database seeded with initial data",
     },
   });
-
-  // ========================================
-  // SITE SETTINGS
-  // ========================================
-  console.log("⚙️  Creating Site Settings...");
-  await prisma.siteSettings.create({
-    data: {
-      isAudioPlayerVisible: true,
-      isShopVisible: true,
-      isSocialLinksVisible: true,
-      isYoutubeVisible: true,
-      youtubeAutoScroll: true,
-      youtubeScrollInterval: 2000,
-      heroSliderEnabled: true,
-      heroSliderInterval: 5000,
-      heroKenBurnsEffect: true,
-    },
-  });
-  console.log("   ✓ Site settings created\n");
-
-  // ========================================
-  // ARTIST PROFILE
-  // ========================================
-  console.log("🎤 Creating Artist profile...");
-  const artist = await prisma.artist.create({
-    data: {
-      name: "Heiraza",
-      bio: `Heiraza is a sonic architect whose music transcends conventional boundaries. With roots in electronic production and a soul steeped in classical training, her sound creates bridges between worlds—past and future, digital and organic, intimate and expansive.
-
-Her debut album "Whispers in the Static" earned critical acclaim for its innovative blend of ambient textures, soulful vocals, and intricate production. Each track is a carefully crafted journey, designed to transport listeners to liminal spaces where emotion and frequency become one.
-
-From the underground clubs of Brooklyn to festival stages across three continents, Heiraza has cultivated a devoted following who recognize the rare authenticity in her artistry. Her live performances are immersive experiences—equal parts concert, ceremony, and collective meditation.
-
-"Music is the language of the in-between," she says. "The space where we stop thinking and start feeling. That's where I want to take people."`,
-      heroImage: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1920&q=85",
-      facebookUrl: "https://www.facebook.com/heiraza",
-      instagramUrl: "https://www.instagram.com/heiraza",
-      tiktokUrl: "https://www.tiktok.com/@heiraza",
-      youtubeUrl: "https://www.youtube.com/channel/UCG-U_LASrZwa5nOHcAHQGDQ",
-      spotifyUrl: "https://open.spotify.com/artist/heiraza",
-      appleMusicUrl: "https://music.apple.com/artist/heiraza",
-      soundcloudUrl: "https://soundcloud.com/heiraza",
-      twitterUrl: "https://twitter.com/heiraza",
-    },
-  });
-  console.log(`   ✓ Artist created: ${artist.name}\n`);
 
   // ========================================
   // AUDIO TRACKS
@@ -156,26 +163,17 @@ From the underground clubs of Brooklyn to festival stages across three continent
   // ========================================
   console.log("🖼️  Creating Hero Images...");
   const heroImages = [
-    { imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1920&q=85", altText: "Heiraza performing live", sortOrder: 0 },
-    { imageUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=85", altText: "Concert lights", sortOrder: 1 },
+    { imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1920&q=85", altText: "Heiraza performing live", sortOrder: 0, isActive: true },
+    { imageUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=85", altText: "Concert lights", sortOrder: 1, isActive: true },
   ];
   for (const img of heroImages) {
-    await prisma.heroImage.create({ data: { ...img, artistId: artist.id } });
+    // artistId removed
+    await prisma.heroImage.create({ data: img });
   }
   console.log(`   ✓ ${heroImages.length} hero images created\n`);
 
-  // ========================================
-  // BIO IMAGES
-  // ========================================
-  console.log("📸 Creating Bio Images...");
-  const bioImages = [
-    { imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=85", caption: "In the studio", sortOrder: 0 },
-    { imageUrl: "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=800&q=85", caption: "Behind the scenes", sortOrder: 1 },
-  ];
-  for (const img of bioImages) {
-    await prisma.bioImage.create({ data: { ...img, artistId: artist.id } });
-  }
-  console.log(`   ✓ ${bioImages.length} bio images created\n`);
+  // Bio Images Block Removed (Merged into Bio table)
+
 
   // ========================================
   // GALLERY IMAGES

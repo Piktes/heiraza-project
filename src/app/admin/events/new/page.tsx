@@ -184,6 +184,7 @@ export default function NewEventPage() {
                 name="date"
                 required
                 className="input-field"
+                onClick={(e) => e.currentTarget.showPicker()}
               />
             </div>
             <div>
@@ -197,6 +198,7 @@ export default function NewEventPage() {
                 required
                 defaultValue="20:00"
                 className="input-field"
+                onClick={(e) => e.currentTarget.showPicker()}
               />
             </div>
           </div>

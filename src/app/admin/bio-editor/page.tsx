@@ -5,130 +5,125 @@ import { BioEditor } from "@/components/admin/bio-editor";
 import { InfoBar } from "@/components/admin/info-bar";
 import { FileText } from "lucide-react";
 
-async function getArtist() {
-    return prisma.artist.findFirst({
+async function getBio() {
+    return prisma.bio.findFirst({
         include: {
-            bioImages: {
-                orderBy: { sortOrder: "asc" },
-            },
-        },
+            images: {
+                orderBy: { sortOrder: "asc" }
+            }
+        }
     });
 }
 
 // Server action to save bio
 async function saveBio(formData: FormData) {
     "use server";
-    const bio = formData.get("bio") as string;
+    const bioContent = formData.get("bio") as string;
 
-    const artist = await prisma.artist.findFirst();
-    if (artist) {
-        await prisma.artist.update({
-            where: { id: artist.id },
-            data: { bio },
+    const bio = await prisma.bio.findFirst();
+    if (bio) {
+        await prisma.bio.update({
+            where: { id: bio.id },
+            data: { content: bioContent },
         });
 
-        // Log the bio update action
         logAction(
             "Sahadmin",
             "UPDATE_BIO",
-            `Updated artist biography (${bio.length} characters)`
+            `Updated artist biography`
         );
+    } else {
+        // Create if doesn't exist (bootstrapping)
+        await prisma.bio.create({
+            data: { content: bioContent, isActive: true }
+        });
     }
 
     revalidatePath("/admin/bio-editor");
 }
 
-// Server action to add image
+// Server action to ADD a new image
 async function addBioImage(formData: FormData) {
     "use server";
     const imageUrl = formData.get("imageUrl") as string;
-    const caption = formData.get("caption") as string | null;
 
-    const artist = await prisma.artist.findFirst();
-    if (!artist) return;
-
-    const maxOrder = await prisma.bioImage.findFirst({
-        where: { artistId: artist.id },
-        orderBy: { sortOrder: "desc" },
-        select: { sortOrder: true },
-    });
+    // Ensure Bio record exists
+    let bio = await prisma.bio.findFirst();
+    if (!bio) {
+        bio = await prisma.bio.create({ data: { isActive: true } });
+    }
 
     await prisma.bioImage.create({
         data: {
-            artistId: artist.id,
+            bioId: bio.id,
             imageUrl,
-            caption: caption || null,
-            sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
-        },
+            caption: "",
+            sortOrder: 99 // Default to end
+        }
     });
 
-    // Log the image addition
-    logAction(
-        "Sahadmin",
-        "ADD_BIO_IMAGE",
-        `Added bio image${caption ? `: "${caption}"` : ""}`
-    );
-
+    logAction("Sahadmin", "ADD_BIO_IMAGE", "Added new bio image");
     revalidatePath("/admin/bio-editor");
 }
 
-// Server action to delete image
+// Server action to DELETE an image
 async function deleteBioImage(formData: FormData) {
     "use server";
     const id = parseInt(formData.get("id") as string);
-    await prisma.bioImage.delete({ where: { id } });
+    if (!id) return;
 
-    // Log the image deletion
-    logAction(
-        "Sahadmin",
-        "DELETE_BIO_IMAGE",
-        `Deleted bio image ID: ${id}`
-    );
+    await prisma.bioImage.delete({
+        where: { id }
+    });
 
+    logAction("Sahadmin", "DELETE_BIO_IMAGE", `Deleted bio image ${id}`);
     revalidatePath("/admin/bio-editor");
 }
 
-// Server action to reorder images
+// Server action to REORDER images
 async function reorderBioImages(formData: FormData) {
     "use server";
-    const order = JSON.parse(formData.get("order") as string) as number[];
+    const orderJson = formData.get("order") as string;
+    const order = JSON.parse(orderJson) as number[];
 
-    await Promise.all(
-        order.map((id, index) =>
-            prisma.bioImage.update({
-                where: { id },
-                data: { sortOrder: index },
-            })
-        )
+    const updatePromises = order.map((id, index) =>
+        prisma.bioImage.update({
+            where: { id },
+            data: { sortOrder: index }
+        })
     );
 
+    await Promise.all(updatePromises);
     revalidatePath("/admin/bio-editor");
 }
 
 export default async function BioEditorPage() {
-    const artist = await getArtist();
+    const bio = await getBio();
+
+    /* 
+       MIGRATION NOTE: If specific logic is needed to migrate the old single `imageUrl` 
+       to the new `BioImage` table, it can be done via a script or manually. 
+       For now, we start fresh or rely on `images` array.
+    */
 
     return (
         <div className="min-h-screen">
-            {/* InfoBar */}
-            <InfoBar counter={`${artist?.bioImages?.length || 0} images`} />
+            <InfoBar counter="Bio Management" />
 
             <div className="max-w-4xl mx-auto px-4 pb-10">
-                {/* Page Header */}
                 <div className="mb-6">
                     <h1 className="font-display text-display-md tracking-wider uppercase flex items-center gap-3">
                         <FileText className="text-accent-coral" size={32} />
                         Bio Editor
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                        Edit your biography text and manage bio images. Drag images to reorder them.
+                        Edit your biography text and manage gallery images.
                     </p>
                 </div>
 
-                {/* Bio Editor Component */}
                 <BioEditor
-                    initialBio={artist?.bio || ""}
-                    initialImages={artist?.bioImages || []}
+                    initialBio={bio?.content || ""}
+                    initialImages={bio?.images || []}
                     saveBioAction={saveBio}
                     addImageAction={addBioImage}
                     deleteImageAction={deleteBioImage}

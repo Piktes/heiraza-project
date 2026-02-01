@@ -37,9 +37,7 @@ async function getStats() {
     return { total, unread };
 }
 
-async function getArtist() {
-    return prisma.artist.findFirst();
-}
+// function getArtist() { return ... } // Removed
 
 async function getSignature() {
     const sig = await prisma.emailSignature.findFirst({ orderBy: { updatedAt: "desc" } });
@@ -82,10 +80,9 @@ export default async function MessagesPage({
 }) {
     const params = await searchParams;
     const showUnread = params.unread === "true";
-    const [messages, stats, artist, signature] = await Promise.all([
+    const [messages, stats, signature] = await Promise.all([
         getMessages(params.search, params.sort, showUnread),
         getStats(),
-        getArtist(),
         getSignature(),
     ]);
 

@@ -84,15 +84,23 @@ export function AnnouncementPreviewModal({
 
     // Format date for display
     const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        try {
+            if (!dateStr) return "Date not set";
+            const date = new Date(dateStr);
+            // Check for invalid date
+            if (isNaN(date.getTime())) return dateStr;
+
+            return date.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        } catch (e) {
+            return dateStr;
+        }
     };
 
     if (!isOpen) return null;
@@ -106,9 +114,9 @@ export function AnnouncementPreviewModal({
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl bg-background rounded-2xl shadow-2xl border border-border overflow-hidden">
+            <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-background rounded-2xl shadow-2xl border border-border overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-border">
+                <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <Send className="text-accent-coral" size={24} />
                         <h2 className="font-display text-xl tracking-wide">Send Announcement</h2>
@@ -122,7 +130,7 @@ export function AnnouncementPreviewModal({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 overflow-y-auto flex-1">
                     {/* Recipient Count */}
                     <div className="flex items-center gap-3 p-4 rounded-xl bg-accent-coral/10 border border-accent-coral/20">
                         <Users className="text-accent-coral" size={24} />
@@ -194,17 +202,17 @@ export function AnnouncementPreviewModal({
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row items-center justify-end gap-3 p-6 border-t border-border bg-muted/30">
+                <div className="grid grid-cols-2 sm:flex sm:flex-row items-center justify-end gap-3 p-4 border-t border-border bg-muted/30">
                     <button
                         onClick={onClose}
-                        className="w-full sm:w-auto btn-secondary"
+                        className="w-full sm:w-auto btn-ghost h-10 text-sm px-4 text-muted-foreground"
                         disabled={isLoading || isSending}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSaveOnly}
-                        className="w-full sm:w-auto btn-ghost flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto btn-ghost h-10 text-sm px-4 flex items-center justify-center gap-2"
                         disabled={isLoading || isSending}
                     >
                         {isLoading && !isSending ? (
@@ -216,7 +224,7 @@ export function AnnouncementPreviewModal({
                     </button>
                     <button
                         onClick={handleConfirmAndSend}
-                        className="w-full sm:w-auto btn-primary flex items-center justify-center gap-2"
+                        className="col-span-2 sm:col-span-1 w-full sm:w-auto btn-primary h-10 text-sm px-4 flex items-center justify-center gap-2"
                         disabled={isLoading || isSending || subscriberCount === 0}
                     >
                         {isSending ? (

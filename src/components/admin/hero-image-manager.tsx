@@ -145,28 +145,30 @@ export function HeroImageManager({
                     <h2 className="font-display text-xl tracking-wide">Slider Settings</h2>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="flex items-center gap-2">
                         <Clock size={18} className="text-muted-foreground" />
                         <span className="text-sm">Slide Duration:</span>
                     </div>
-                    <input
-                        type="number"
-                        value={speed}
-                        onChange={(e) => setSpeed(parseInt(e.target.value) || 3000)}
-                        min={1000}
-                        max={20000}
-                        step={500}
-                        className="input-field w-28"
-                    />
-                    <span className="text-sm text-muted-foreground">ms</span>
-                    <button
-                        onClick={handleSpeedSave}
-                        disabled={isPending}
-                        className="btn-primary text-sm py-2"
-                    >
-                        {speedSaved ? "Saved!" : "Save"}
-                    </button>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <input
+                            type="number"
+                            value={speed}
+                            onChange={(e) => setSpeed(parseInt(e.target.value) || 3000)}
+                            min={1000}
+                            max={20000}
+                            step={500}
+                            className="input-field flex-1 sm:w-28"
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">ms</span>
+                        <button
+                            onClick={handleSpeedSave}
+                            disabled={isPending}
+                            className="btn-primary text-sm py-2 ml-auto sm:ml-0"
+                        >
+                            {speedSaved ? "Saved!" : "Save"}
+                        </button>
+                    </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                     Time between slide transitions (1000ms = 1 second)
@@ -268,18 +270,18 @@ export function HeroImageManager({
                         {images.map((image, index) => (
                             <div
                                 key={image.id}
-                                className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${image.isActive
+                                className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all ${image.isActive
                                     ? "bg-background/50 border-border"
                                     : "bg-muted/30 border-muted opacity-60"
                                     }`}
                             >
-                                {/* Order Number */}
-                                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-medium">
+                                {/* Order Number - Hidden on mobile */}
+                                <div className="hidden sm:flex w-8 h-8 rounded-lg bg-muted items-center justify-center text-sm font-medium">
                                     {index + 1}
                                 </div>
 
-                                {/* Image Preview */}
-                                <div className="w-32 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                {/* Image Preview - Smaller on mobile */}
+                                <div className="w-20 h-14 sm:w-32 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                     <Image
                                         src={image.imageUrl}
                                         alt={image.altText || `Hero ${index + 1}`}
@@ -291,57 +293,57 @@ export function HeroImageManager({
 
                                 {/* Image Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{image.imageUrl.split("/").pop()}</p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="font-medium truncate text-sm sm:text-base">{image.imageUrl.split("/").pop()}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">
                                         Order: {image.sortOrder} • {image.isActive ? "Active" : "Hidden"}
                                     </p>
                                 </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-1">
+                                {/* Actions - Tighter on mobile */}
+                                <div className="flex items-center gap-0.5 sm:gap-1">
                                     {/* Move Up */}
                                     <button
                                         onClick={() => handleMove(image.id, "up")}
                                         disabled={index === 0 || isPending}
-                                        className={`p-2 rounded-lg transition-colors ${index === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"
+                                        className={`p-1.5 sm:p-2 rounded-lg transition-colors ${index === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"
                                             }`}
                                         title="Move up"
                                     >
-                                        <ChevronUp size={18} />
+                                        <ChevronUp size={16} className="sm:w-[18px] sm:h-[18px]" />
                                     </button>
 
                                     {/* Move Down */}
                                     <button
                                         onClick={() => handleMove(image.id, "down")}
                                         disabled={index === images.length - 1 || isPending}
-                                        className={`p-2 rounded-lg transition-colors ${index === images.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"
+                                        className={`p-1.5 sm:p-2 rounded-lg transition-colors ${index === images.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"
                                             }`}
                                         title="Move down"
                                     >
-                                        <ChevronDown size={18} />
+                                        <ChevronDown size={16} className="sm:w-[18px] sm:h-[18px]" />
                                     </button>
 
                                     {/* Toggle Active */}
                                     <button
                                         onClick={() => handleToggle(image.id, image.isActive)}
                                         disabled={isPending}
-                                        className={`p-2 rounded-lg transition-colors ${image.isActive
+                                        className={`p-1.5 sm:p-2 rounded-lg transition-colors ${image.isActive
                                             ? "hover:bg-muted text-accent-coral"
                                             : "hover:bg-muted text-muted-foreground"
                                             }`}
                                         title={image.isActive ? "Hide" : "Show"}
                                     >
-                                        {image.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
+                                        {image.isActive ? <Eye size={16} className="sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="sm:w-[18px] sm:h-[18px]" />}
                                     </button>
 
                                     {/* Delete */}
                                     <button
                                         onClick={() => handleDelete(image.id)}
                                         disabled={isPending}
-                                        className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                                         title="Delete"
                                     >
-                                        <Trash2 size={18} className="text-red-500" />
+                                        <Trash2 size={16} className="text-red-500 sm:w-[18px] sm:h-[18px]" />
                                     </button>
                                 </div>
                             </div>

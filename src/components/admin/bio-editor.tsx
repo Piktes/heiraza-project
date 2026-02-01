@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Save, Upload, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
+import { Save, Upload, Trash2, GripVertical, Image as ImageIcon, Edit2, X, CheckCircle, XCircle } from "lucide-react";
 import { compressImage } from "@/lib/image-compression";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 interface BioImage {
     id: number;
@@ -28,18 +29,64 @@ export function BioEditor({
     deleteImageAction,
     reorderAction,
 }: BioEditorProps) {
-    const [bio, setBio] = useState(initialBio);
+    const [bio, setBio] = useState(initialBio); // Stored full bio
+    const [activePage, setActivePage] = useState(0); // Current page index
     const [images, setImages] = useState<BioImage[]>(initialImages);
     const [isSaving, setIsSaving] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [dragIndex, setDragIndex] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // PAGINATION LOGIC
+    const PAGE_DELIMITER = "<!-- PAGE_BREAK -->";
+    const pages = bio.split(PAGE_DELIMITER);
+    const currentPageContent = pages[activePage] || "";
+
+    const handlePageChange = (content: string) => {
+        const newPages = [...pages];
+        newPages[activePage] = content;
+        setBio(newPages.join(PAGE_DELIMITER));
+    };
+
+    const addNewPage = () => {
+        const newPages = [...pages, ""];
+        setBio(newPages.join(PAGE_DELIMITER));
+        setActivePage(newPages.length - 1);
+    };
+
+    const deleteCurrentPage = () => {
+        if (pages.length <= 1) return; // Prevent deleting last page
+        const newPages = pages.filter((_, i) => i !== activePage);
+        setBio(newPages.join(PAGE_DELIMITER));
+        setActivePage(Math.max(0, activePage - 1));
+    };
+
+    const goToPrevPage = () => setActivePage(Math.max(0, activePage - 1));
+    const goToNextPage = () => setActivePage(Math.min(pages.length - 1, activePage + 1));
+
     const handleSaveBio = async () => {
         setIsSaving(true);
-        const formData = new FormData();
-        formData.set("bio", bio);
-        await saveBioAction(formData);
-        setIsSaving(false);
+        setToast(null);
+        try {
+            const formData = new FormData();
+            formData.set("bio", bio);
+            await saveBioAction(formData);
+            setToast({ type: "success", message: "Bio updated successfully!" });
+            setIsEditing(false);
+        } catch (error) {
+            console.error("Failed to save bio:", error);
+            setToast({ type: "error", message: "Failed to save bio." });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setBio(initialBio);
+        setActivePage(0);
+        setIsEditing(false);
+        setToast(null);
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,14 +96,12 @@ export function BioEditor({
         setIsSaving(true);
         try {
             for (const file of Array.from(files)) {
-                // 1. Compress image to reduce upload size (Base64) - optimizations for web
-                // Check if file is too large to begin with, though compression helps
+
                 const compressedBase64 = await compressImage(file, {
                     maxWidth: 1200,
                     quality: 0.8
                 });
 
-                // 2. Upload to API to get persistent URL (handles VPS path)
                 const uploadResponse = await fetch("/api/admin/upload", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -73,17 +118,15 @@ export function BioEditor({
 
                 const { url } = await uploadResponse.json();
 
-                // 3. Save URL to database via Server Action
                 const formData = new FormData();
                 formData.set("imageUrl", url);
                 formData.set("caption", "");
                 await addImageAction(formData);
             }
-            // Refresh to show new images
             window.location.reload();
         } catch (error) {
             console.error("Error uploading images:", error);
-            alert("Failed to upload image. Please try again.");
+            setToast({ type: "error", message: "Failed to upload image." });
         } finally {
             setIsSaving(false);
         }
@@ -96,7 +139,6 @@ export function BioEditor({
         setImages(images.filter((img) => img.id !== id));
     };
 
-    // Drag and drop handlers
     const handleDragStart = (index: number) => {
         setDragIndex(index);
     };
@@ -115,47 +157,199 @@ export function BioEditor({
 
     const handleDragEnd = async () => {
         setDragIndex(null);
-        // Save new order
         const formData = new FormData();
         formData.set("order", JSON.stringify(images.map((img) => img.id)));
         await reorderAction(formData);
     };
 
+    const autoPaginate = () => {
+        // Strip HTML tags for clean splitting (simplified) or split raw HTML carefully. 
+        // For simplicity effectively splitting by character count while preserving basic tags is hard.
+        // We will split the raw string but this might break HTML tags. 
+        // Better approach: Split by text content or just warn. 
+        // Let's go with a safe chunking of the current raw content if possible, or just splitting by words.
+
+        // Robust approach: Split the *current page* text.
+        const text = currentPageContent;
+        if (text.length <= 500) return;
+
+        const chunks = [];
+        let remaining = text;
+
+        while (remaining.length > 0) {
+            let chunk = remaining.slice(0, 500);
+            if (remaining.length > 500) {
+                // Try to split at last space
+                const lastSpace = chunk.lastIndexOf(" ");
+                if (lastSpace > 400) { // Keep at least 400 chars (80% full)
+                    chunk = remaining.slice(0, lastSpace);
+                }
+            }
+            chunks.push(chunk);
+            remaining = remaining.slice(chunk.length);
+        }
+
+        const newPages = [...pages];
+        newPages.splice(activePage, 1, ...chunks);
+        setBio(newPages.join(PAGE_DELIMITER));
+        setToast({ type: "success", message: `Auto-split into ${chunks.length} pages!` });
+    };
+
+    // Protect against data loss: Disable limit if content is already too long, so user can edit/split manually
+    const isOverLimit = currentPageContent.length > 500;
+    const effectiveMaxLength = isOverLimit ? undefined : 500;
+
     return (
-        <div className="space-y-8">
-            {/* Bio Text Editor */}
-            <div className="glass-card p-6">
-                <h3 className="font-medium mb-4 flex items-center gap-2">
-                    <span className="text-accent-coral">✎</span>
-                    Biography Text
-                </h3>
-                <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Write your biography here... You can use HTML for formatting."
-                    className="input-field w-full min-h-[300px] font-mono text-sm"
-                />
-                <div className="flex justify-between items-center mt-4">
-                    <p className="text-xs text-muted-foreground">
-                        💡 Tip: Use HTML tags for formatting (e.g., &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;)
-                    </p>
-                    <button
-                        onClick={handleSaveBio}
-                        disabled={isSaving}
-                        className="btn-primary flex items-center gap-2"
-                    >
-                        <Save size={16} />
-                        {isSaving ? "Saving..." : "Save Bio"}
-                    </button>
+        <div className="space-y-8 relative">
+            {/* Custom Toast Notification - Intrusive Top Right */}
+            {toast && (
+                <div className={`fixed top-24 right-6 z-[100] animate-in slide-in-from-right fade-in duration-300 md:w-auto w-[calc(100%-3rem)]`}>
+                    <div className={`glass-card p-4 rounded-xl shadow-2xl border-l-4 flex items-center gap-3 ${toast.type === "success" ? "border-l-accent-coral" : "border-l-red-500"}`}>
+                        <div className={`p-2 rounded-full ${toast.type === "success" ? "bg-accent-coral/10 text-accent-coral" : "bg-red-500/10 text-red-500"}`}>
+                            {toast.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+                        </div>
+                        <div>
+                            <h4 className="font-medium text-sm">{toast.type === "success" ? "Success" : "Error"}</h4>
+                            <p className="text-xs text-muted-foreground">{toast.message}</p>
+                        </div>
+                        <button onClick={() => setToast(null)} className="ml-4 p-1 hover:bg-muted rounded-full transition-colors">
+                            <X size={14} />
+                        </button>
+                    </div>
                 </div>
+            )}
+
+            {/* Bio Text Editor */}
+            <div className="glass-card p-6 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-medium flex items-center gap-2">
+                        <span className="text-accent-coral">✎</span>
+                        Biography Text {pages.length > 1 && <span className="text-muted-foreground text-sm font-normal ml-2">(Page {activePage + 1} of {pages.length})</span>}
+                    </h3>
+                    {!isEditing && (
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="btn-ghost text-sm flex items-center gap-2 hover:bg-accent-coral/10 hover:text-accent-coral"
+                        >
+                            <Edit2 size={14} />
+                            Edit Bio
+                        </button>
+                    )}
+                </div>
+
+                {/* PAGINATION CONTROLS (Common for View & Edit) */}
+                <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-muted/20 rounded-lg">
+                    <button
+                        onClick={goToPrevPage}
+                        disabled={activePage === 0}
+                        className="btn-secondary text-xs px-2 py-1 disabled:opacity-30 flex-shrink-0"
+                    >
+                        Prev Page
+                    </button>
+                    <div className="flex-1 text-center text-xs font-mono text-muted-foreground min-w-[80px]">
+                        PAGE {activePage + 1} / {pages.length}
+                    </div>
+                    <button
+                        onClick={goToNextPage}
+                        disabled={activePage === pages.length - 1}
+                        className="btn-secondary text-xs px-2 py-1 disabled:opacity-30 flex-shrink-0"
+                    >
+                        Next Page
+                    </button>
+                    {isEditing && (
+                        <>
+                            <div className="w-px h-4 bg-border mx-2 hidden sm:block" />
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start mt-2 sm:mt-0">
+                                <button
+                                    onClick={addNewPage}
+                                    className="btn-secondary text-xs px-2 py-1 bg-accent-coral/10 text-accent-coral hover:bg-accent-coral/20 border-accent-coral/20 flex-1 sm:flex-none"
+                                >
+                                    + Add Page
+                                </button>
+                                {pages.length > 1 && (
+                                    <button
+                                        onClick={deleteCurrentPage}
+                                        className="btn-secondary text-xs px-2 py-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20 ml-2 flex-1 sm:flex-none"
+                                    >
+                                        Delete Page
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {isEditing ? (
+                    <div className="animate-in fade-in duration-300">
+                        {isOverLimit && (
+                            <div className="mb-4 bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-lg flex items-center justify-between">
+                                <span className="text-xs text-yellow-500">
+                                    Content exceeds 500 limit ({currentPageContent.length}/500). Editor limit disabled to prevent data loss.
+                                </span>
+                                <button
+                                    onClick={autoPaginate}
+                                    className="text-xs bg-yellow-500 text-white px-3 py-1.5 rounded hover:bg-yellow-600 transition-colors"
+                                >
+                                    Auto-Split Pages
+                                </button>
+                            </div>
+                        )}
+                        <RichTextEditor
+                            value={currentPageContent}
+                            onChange={handlePageChange}
+                            maxLength={effectiveMaxLength}
+                            placeholder={`Write content for page ${activePage + 1}...`}
+                            className="min-h-[200px]"
+                        />
+                        <div className="flex justify-between items-center mt-4">
+                            <span className="text-xs text-muted-foreground">
+                                * Edits are saved to "Page {activePage + 1}". Use navigation above to edit other pages.
+                            </span>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleCancelEdit}
+                                    disabled={isSaving}
+                                    className="btn-secondary text-sm h-10 px-4 border border-border hover:border-accent-coral/50 hover:bg-muted/50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveBio}
+                                    disabled={isSaving}
+                                    className="btn-primary text-sm py-2 px-6 h-10 flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all bg-gradient-to-r from-accent-coral to-orange-500 border-none"
+                                >
+                                    {toast?.type === 'success' && !isSaving ? (
+                                        <>
+                                            <CheckCircle size={18} />
+                                            Saved!
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={18} />
+                                            {isSaving ? "Saving..." : "Save Bio"}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="animate-in fade-in duration-300">
+                        <div
+                            className="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl bg-muted/20 border border-border/50 min-h-[100px] max-h-[250px] overflow-y-auto custom-scrollbar"
+                            dangerouslySetInnerHTML={{ __html: currentPageContent || "<p class='text-muted-foreground italic'>No content on this page.</p>" }}
+                        />
+                    </div>
+                )}
             </div>
+
 
             {/* Image Manager */}
             <div className="glass-card p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium flex items-center gap-2">
                         <ImageIcon size={18} className="text-accent-coral" />
-                        Bio Images
+                        Bio Gallery Images
                     </h3>
                     <div>
                         <input
@@ -168,16 +362,16 @@ export function BioEditor({
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="btn-secondary flex items-center gap-2"
+                            className="btn-secondary text-sm py-1.5 px-3 h-8 flex items-center gap-2"
                         >
-                            <Upload size={16} />
+                            <Upload size={14} />
                             Upload Images
                         </button>
                     </div>
                 </div>
 
                 <p className="text-sm text-muted-foreground mb-4">
-                    Drag images to reorder. Images display with <code className="bg-muted px-1 rounded">object-fit: contain</code> (no cropping).
+                    Upload multiple images for the bio slider. Drag to reorder.
                 </p>
 
                 {images.length > 0 ? (
@@ -229,10 +423,10 @@ export function BioEditor({
                     <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border rounded-xl">
                         <ImageIcon className="mx-auto mb-3" size={40} />
                         <p>No bio images yet</p>
-                        <p className="text-sm">Upload images to display in your bio section</p>
+                        <p className="text-sm">Upload images to display in your bio slider</p>
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

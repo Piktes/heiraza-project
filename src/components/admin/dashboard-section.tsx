@@ -46,20 +46,20 @@ export function DashboardSection({
             {/* Accordion Header - Always visible */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between gap-4 p-4 glass-card hover:bg-muted/50 transition-colors ${isOpen ? "rounded-t-xl rounded-b-none" : "rounded-xl"
+                className={`w-full flex items-center justify-between gap-2 sm:gap-4 p-3 sm:p-4 glass-card hover:bg-muted/50 transition-colors ${isOpen ? "rounded-t-xl rounded-b-none" : "rounded-xl"
                     }`}
             >
                 {/* Left side: Icon + Title + Subtitle */}
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div className="flex-shrink-0 text-accent-coral">
                         {icon}
                     </div>
                     <div className="text-left min-w-0">
-                        <h2 className="font-display text-lg tracking-wide uppercase truncate">
+                        <h2 className="font-display text-base sm:text-lg tracking-wide uppercase truncate">
                             {title}
                         </h2>
                         {subtitle && (
-                            <p className="text-sm text-muted-foreground truncate">
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate">
                                 {subtitle}
                             </p>
                         )}

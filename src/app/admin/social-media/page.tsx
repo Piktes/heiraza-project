@@ -33,7 +33,6 @@ export default function SocialMediaPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-    const [artistId, setArtistId] = useState<number | null>(null);
     const [editingKey, setEditingKey] = useState<string | null>(null);
     const [editValue, setEditValue] = useState("");
 
@@ -52,20 +51,20 @@ export default function SocialMediaPage() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await fetch("/api/admin/artist");
+                const res = await fetch("/api/admin/social-media");
                 if (res.ok) {
-                    const data = await res.json();
-                    setArtistId(data.id);
-                    setFormData({
-                        facebookUrl: data.facebookUrl || "",
-                        instagramUrl: data.instagramUrl || "",
-                        tiktokUrl: data.tiktokUrl || "",
-                        youtubeUrl: data.youtubeUrl || "",
-                        spotifyUrl: data.spotifyUrl || "",
-                        appleMusicUrl: data.appleMusicUrl || "",
-                        soundcloudUrl: data.soundcloudUrl || "",
-                        twitterUrl: data.twitterUrl || "",
-                    });
+                    const json = await res.json();
+                    if (json.success && Array.isArray(json.data)) {
+                        const newFormData = { ...formData };
+                        json.data.forEach((item: any) => {
+                            // Find the platform config that matches this item's platform
+                            const config = PLATFORMS.find(p => p.platform === item.platform);
+                            if (config) {
+                                newFormData[config.key as keyof SocialLinks] = item.url || "";
+                            }
+                        });
+                        setFormData(newFormData);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch:", error);
@@ -80,15 +79,25 @@ export default function SocialMediaPage() {
     const saveChanges = async (newData: SocialLinks) => {
         setIsSaving(true);
         try {
+            // Transform formData back to array format for API
+            const updates = PLATFORMS.map(p => ({
+                platform: p.platform,
+                url: newData[p.key as keyof SocialLinks],
+                isVisible: !!newData[p.key as keyof SocialLinks], // Auto-visible if has URL
+                sortOrder: 0 // Default order
+            }));
+
             const res = await fetch("/api/admin/social-media", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: artistId, ...newData }),
+                body: JSON.stringify({ updates }),
             });
             if (res.ok) {
                 setMessage({ type: "success", text: "Changes saved!" });
                 setTimeout(() => setMessage(null), 2000);
                 router.refresh();
+            } else {
+                setMessage({ type: "error", text: "Failed to save" });
             }
         } catch (error) {
             setMessage({ type: "error", text: "Failed to save" });
@@ -102,10 +111,13 @@ export default function SocialMediaPage() {
         const currentValue = formData[key as keyof SocialLinks];
         const newData = {
             ...formData,
-            [key]: currentValue ? "" : "", // Clear the URL to "deactivate"
+            [key]: currentValue ? "" : "", // Logically this clears it. To "restore" we'd need history, but simplified behaviour is fine: "toggle off" = clear.
         };
-        // If already empty, we can't toggle it - user needs to add a URL first
-        if (!currentValue) return;
+        // If it's already empty, user must explicitly add a URL, so toggle does nothing or opens edit.
+        if (!currentValue) {
+            startEdit(key);
+            return;
+        }
 
         setFormData(newData);
         await saveChanges(newData);
@@ -176,7 +188,7 @@ export default function SocialMediaPage() {
                     </div>
                 )}
 
-                {/* Social Links Card (Track Manager Style) */}
+                {/* Social Links Card */}
                 <div className="glass-card p-8">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
@@ -190,9 +202,6 @@ export default function SocialMediaPage() {
                         </div>
                     </div>
 
-                    {/* ========================================
-              SOCIAL LINKS LIST (Track Manager Style)
-              ======================================== */}
                     <div className="space-y-3">
                         {PLATFORMS.map((platform) => {
                             const value = formData[platform.key as keyof SocialLinks];
@@ -248,10 +257,9 @@ export default function SocialMediaPage() {
                                         )}
                                     </div>
 
-                                    {/* Actions (Track Manager Style) */}
+                                    {/* Actions */}
                                     {!isEditing && (
                                         <div className="flex items-center gap-2">
-                                            {/* Edit Button */}
                                             <button
                                                 onClick={() => startEdit(platform.key)}
                                                 className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -260,7 +268,6 @@ export default function SocialMediaPage() {
                                                 <Edit2 size={18} className="text-muted-foreground" />
                                             </button>
 
-                                            {/* Toggle Active (Eye Icon) */}
                                             <button
                                                 onClick={() => isActive ? handleDelete(platform.key) : startEdit(platform.key)}
                                                 className={`p-2 rounded-lg transition-colors ${isActive
@@ -272,7 +279,6 @@ export default function SocialMediaPage() {
                                                 {isActive ? <Eye size={18} /> : <EyeOff size={18} />}
                                             </button>
 
-                                            {/* Delete (Trash Icon) */}
                                             <button
                                                 onClick={() => handleDelete(platform.key)}
                                                 className={`p-2 rounded-lg transition-colors ${isActive
@@ -292,7 +298,6 @@ export default function SocialMediaPage() {
                     </div>
                 </div>
 
-                {/* Info Box */}
                 <div className="mt-8 p-6 rounded-xl bg-muted/50 text-sm text-muted-foreground">
                     <p className="font-medium text-foreground mb-2">How it works:</p>
                     <ul className="list-disc list-inside space-y-1">

@@ -26,8 +26,9 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL((process.env.NEXT_PUBLIC_SITE_URL || "https://heiraza.com").split(',')[0].trim()),
+import { headers } from "next/headers";
+
+const baseMetadata: Metadata = {
   title: "HEIRAZA | Official Website",
   description: "Welcome to the official website of HEIRAZA.",
   keywords: ["Heiraza", "Music Artist", "Sonic Architect", "Concerts", "Live Shows", "Merch", "Tour Dates", "Events", "Electronic Music"],
@@ -45,34 +46,47 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  openGraph: {
-    title: "HEIRAZA | Official Website",
-    description: "Welcome to the official website of HEIRAZA.",
-    url: "/",
-    siteName: "Heiraza",
-    type: "website",
-    locale: "en_US",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Heiraza - Official Website",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "HEIRAZA | Official Website",
-    description: "Welcome to the official website of HEIRAZA.",
-    images: ["/og-image.jpg"],
-  },
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   manifest: "/site.webmanifest",
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = headers();
+  // Safe header parsing for reverse proxies
+  const host = headersList.get("host")?.split(',')[0].trim() || "heiraza.com";
+  const proto = headersList.get("x-forwarded-proto")?.split(',')[0].trim() || "https";
+  const baseUrl = `${proto}://${host}`;
+
+  return {
+    ...baseMetadata,
+    metadataBase: new URL(baseUrl),
+    openGraph: {
+      title: "HEIRAZA | Official Website",
+      description: "Welcome to the official website of HEIRAZA.",
+      url: "/",
+      siteName: "Heiraza",
+      type: "website",
+      locale: "en_US",
+      images: [
+        {
+          url: "/og-image.jpg",
+          width: 1200,
+          height: 630,
+          alt: "Heiraza - Official Website",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "HEIRAZA | Official Website",
+      description: "Welcome to the official website of HEIRAZA.",
+      images: ["/og-image.jpg"],
+    },
+  };
+}
 
 export default function RootLayout({
   children,

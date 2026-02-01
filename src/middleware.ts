@@ -11,17 +11,14 @@ const PUBLIC_PATHS = [
 export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
+    // 1. Safe parsing of host and protocol for Reverse Proxy compatibility (LiteSpeed/Nginx)
+    const host = request.headers.get('host')?.split(',')[0].trim() || 'localhost:3000'; // Fallback to localhost if missing
+    const proto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || 'http'; // Default to http if missing
+    const baseUrl = `${proto}://${host}`;
+
     // FORCE HTTPS (Skip for localhost development)
-    if (process.env.NODE_ENV !== 'development') {
-        const rawProto = request.headers.get('x-forwarded-proto') || 'http';
-        const rawHost = request.headers.get('host') || '';
-
-        const proto = rawProto.split(',')[0].trim();
-        const host = rawHost.split(',')[0].trim();
-
-        if (proto === 'http') {
-            return NextResponse.redirect(`https://${host}${pathname}`, 301);
-        }
+    if (process.env.NODE_ENV === 'production' && proto === 'http') {
+        return NextResponse.redirect(`https://${host}${pathname}`, 301);
     }
 
     // Check if this path is public (login or auth API)
@@ -50,7 +47,8 @@ export async function middleware(request: NextRequest) {
             }
 
             // For pages, redirect to login
-            const url = new URL("/admin/login", request.url);
+            // Use baseUrl to prevent ERR_INVALID_URL behind proxies
+            const url = new URL("/admin/login", baseUrl);
             url.searchParams.set("callbackUrl", pathname);
             return NextResponse.redirect(url);
         }

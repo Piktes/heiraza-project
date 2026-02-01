@@ -41,14 +41,14 @@ export async function GET() {
     }
 }
 
+// PUT - Update social media links
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
         const { id, ...platforms } = body;
 
-        if (!id) {
-            return NextResponse.json({ error: "Artist ID required" }, { status: 400 });
-        }
+        // Check if an artist exists at all
+        let artist = await prisma.artist.findFirst();
 
         const updateData: any = {};
 
@@ -68,10 +68,25 @@ export async function PUT(request: NextRequest) {
             }
         });
 
-        const updated = await prisma.artist.update({
-            where: { id: Number(id) },
-            data: updateData,
-        });
+        let updated;
+
+        if (artist) {
+            // Update existing
+            updated = await prisma.artist.update({
+                where: { id: artist.id },
+                data: updateData,
+            });
+        } else {
+            // Create new (Bootstrap) with default name+bio AND the social links
+            updated = await prisma.artist.create({
+                data: {
+                    name: "Heiraza",
+                    bio: "",
+                    heroImage: "",
+                    ...updateData
+                }
+            });
+        }
 
         const response: Record<string, any> = {};
         const platformKeys = ['facebook', 'instagram', 'tiktok', 'youtube', 'spotify', 'appleMusic', 'soundcloud', 'twitter'];

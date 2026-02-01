@@ -8,10 +8,8 @@ export async function GET() {
     const artist = await prisma.artist.findFirst();
 
     if (!artist) {
-      return NextResponse.json(
-        { error: "Artist not found" },
-        { status: 404 }
-      );
+      // Return empty structure instead of 404 to allow frontend to load
+      return NextResponse.json({});
     }
 
     return NextResponse.json(artist);
@@ -42,27 +40,43 @@ export async function PUT(request: NextRequest) {
       twitterUrl,
     } = data;
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Artist ID is required" },
-        { status: 400 }
-      );
-    }
+    // Check if an artist exists at all
+    let artist = await prisma.artist.findFirst();
 
-    const updatedArtist = await prisma.artist.update({
-      where: { id: parseInt(id) },
-      data: {
-        name: name || undefined,
-        bio: bio || undefined,
-        heroImage: heroImage || undefined,
-        facebookUrl: facebookUrl || null,
-        instagramUrl: instagramUrl || null,
-        tiktokUrl: tiktokUrl || null,
-        youtubeUrl: youtubeUrl || null,
-        spotifyUrl: spotifyUrl || null,
-        twitterUrl: twitterUrl || null,
-      },
-    });
+    let updatedArtist;
+
+    if (artist) {
+      // Update existing
+      updatedArtist = await prisma.artist.update({
+        where: { id: artist.id }, // Use found ID, ignore param ID to be safe
+        data: {
+          name: name || undefined,
+          bio: bio || undefined,
+          heroImage: heroImage || undefined,
+          facebookUrl: facebookUrl || null,
+          instagramUrl: instagramUrl || null,
+          tiktokUrl: tiktokUrl || null,
+          youtubeUrl: youtubeUrl || null,
+          spotifyUrl: spotifyUrl || null,
+          twitterUrl: twitterUrl || null,
+        },
+      });
+    } else {
+      // Create new (Bootstrap)
+      updatedArtist = await prisma.artist.create({
+        data: {
+          name: name || "Heiraza",
+          bio: bio || "",
+          heroImage: heroImage || "",
+          facebookUrl: facebookUrl || null,
+          instagramUrl: instagramUrl || null,
+          tiktokUrl: tiktokUrl || null,
+          youtubeUrl: youtubeUrl || null,
+          spotifyUrl: spotifyUrl || null,
+          twitterUrl: twitterUrl || null,
+        },
+      });
+    }
 
     // Log the settings update action
     const changedFields = Object.entries(data)

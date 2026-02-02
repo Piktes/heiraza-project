@@ -2,10 +2,17 @@ import { headers } from "next/headers";
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const headersList = headers();
-    const host = headersList.get("host")?.split(',')[0].trim() || "heiraza.com";
-    const proto = headersList.get("x-forwarded-proto")?.split(',')[0].trim() || "https";
-    const baseUrl = `${proto}://${host}`;
+    // HARDCODED fallback - LiteSpeed sends duplicate headers
+    let baseUrl = "https://heiraza.com";
+
+    try {
+        const headersList = headers();
+        const host = (headersList.get("host") || "").split(',')[0].trim() || "heiraza.com";
+        const proto = (headersList.get("x-forwarded-proto") || "").split(',')[0].trim() || "https";
+        baseUrl = `${proto}://${host}`;
+    } catch (e) {
+        console.error("[Sitemap] Header parsing failed, using fallback");
+    }
 
     return [
         {

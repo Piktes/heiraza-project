@@ -54,15 +54,31 @@ const baseMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const headersList = headers();
-  // Safe header parsing for reverse proxies
-  const host = headersList.get("host")?.split(',')[0].trim() || "heiraza.com";
-  const proto = headersList.get("x-forwarded-proto")?.split(',')[0].trim() || "https";
-  const baseUrl = `${proto}://${host}`;
+  // HARDCODED fallback - LiteSpeed sends duplicate headers causing URL parse errors
+  const FALLBACK_URL = "https://heiraza.com";
+
+  let metadataBase: URL;
+
+  try {
+    const headersList = headers();
+    // Safe header parsing for reverse proxies (handles "host1, host1" duplicates)
+    const rawHost = headersList.get("host") || "";
+    const rawProto = headersList.get("x-forwarded-proto") || "";
+
+    const host = rawHost.split(',')[0].trim() || "heiraza.com";
+    const proto = rawProto.split(',')[0].trim() || "https";
+    const baseUrl = `${proto}://${host}`;
+
+    metadataBase = new URL(baseUrl);
+  } catch (e) {
+    // If anything fails, use hardcoded fallback
+    console.error("[Metadata] URL construction failed, using fallback:", e);
+    metadataBase = new URL(FALLBACK_URL);
+  }
 
   return {
     ...baseMetadata,
-    metadataBase: new URL(baseUrl),
+    metadataBase,
     openGraph: {
       title: "HEIRAZA | Official Website",
       description: "Welcome to the official website of HEIRAZA.",

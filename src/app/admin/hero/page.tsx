@@ -38,9 +38,8 @@ async function addHeroImages(formData: FormData) {
         return { success: false, error: "No images provided" };
     }
 
-    const uploadsDir = process.env.NODE_ENV === 'production'
-        ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "hero")
-        : path.join(process.cwd(), "public", "uploads", "hero");
+    // Use process.cwd() - works on any VPS
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "hero");
 
     await mkdir(uploadsDir, { recursive: true });
 

@@ -185,9 +185,7 @@ async function addTrack(formData: FormData) {
   let finalCoverImage: string | null = null;
 
   if (audioFile && audioFile.size > 0) {
-    const uploadsDir = process.env.NODE_ENV === 'production'
-      ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "audio")
-      : path.join(process.cwd(), "public", "uploads", "audio");
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "audio");
     await mkdir(uploadsDir, { recursive: true });
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
@@ -200,9 +198,7 @@ async function addTrack(formData: FormData) {
   if (!fileUrl && !finalExternalLink) return { success: false, error: "Audio source required" };
 
   if (coverImageData && coverImageData.startsWith("data:image")) {
-    const uploadsDir = process.env.NODE_ENV === 'production'
-      ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "covers")
-      : path.join(process.cwd(), "public", "uploads", "covers");
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "covers");
     await mkdir(uploadsDir, { recursive: true });
     const base64Content = coverImageData.replace(/^data:image\/\w+;base64,/, "");
     const timestamp = Date.now();
@@ -311,9 +307,7 @@ async function updateTrack(formData: FormData) {
 
   // Handle Audio File Replacement
   if (audioFile && audioFile.size > 0) {
-    const uploadsDir = process.env.NODE_ENV === 'production'
-      ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "audio")
-      : path.join(process.cwd(), "public", "uploads", "audio");
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "audio");
     await mkdir(uploadsDir, { recursive: true });
 
     // Delete old file if it exists and is local
@@ -338,9 +332,7 @@ async function updateTrack(formData: FormData) {
 
   // Handle Cover Image Replacement
   if (coverImageData && coverImageData.startsWith("data:image")) {
-    const uploadsDir = process.env.NODE_ENV === 'production'
-      ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "covers")
-      : path.join(process.cwd(), "public", "uploads", "covers");
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", "covers");
     await mkdir(uploadsDir, { recursive: true });
 
     // Delete old cover
@@ -393,9 +385,7 @@ async function addGalleryImage(formData: FormData) {
 
   if (!imageData || !imageData.startsWith("data:image")) return { success: false, error: "No image provided" };
 
-  const uploadsDir = process.env.NODE_ENV === 'production'
-    ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "gallery")
-    : path.join(process.cwd(), "public", "uploads", "gallery");
+  const uploadsDir = path.join(process.cwd(), "public", "uploads", "gallery");
   await mkdir(uploadsDir, { recursive: true });
 
   const base64Content = imageData.replace(/^data:image\/\w+;base64,/, "");
@@ -427,9 +417,7 @@ async function addMultipleGalleryImages(formData: FormData) {
 
   if (!imageDataList || imageDataList.length === 0) return { success: false, error: "No images provided" };
 
-  const uploadsDir = process.env.NODE_ENV === 'production'
-    ? path.join('/home/vps2621146.dedi.server-hosting.expert/public_html/public/uploads', "gallery")
-    : path.join(process.cwd(), "public", "uploads", "gallery");
+  const uploadsDir = path.join(process.cwd(), "public", "uploads", "gallery");
   await mkdir(uploadsDir, { recursive: true });
 
   let lastImage = await prisma.galleryImage.findFirst({ orderBy: { sortOrder: "desc" } });

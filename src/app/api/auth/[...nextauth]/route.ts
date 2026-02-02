@@ -4,6 +4,11 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { logAdminAction } from "@/lib/audit-logger";
 
+// Helper to get first value from potentially comma-separated header (LiteSpeed/proxy fix)
+function first(v: string | null | undefined) {
+  return v ? String(v).split(",")[0].trim() : "";
+}
+
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
@@ -88,6 +93,23 @@ const handler = NextAuth({
     maxAge: 60 * 60, // 60 minutes (1 hour)
   },
   callbacks: {
+    // Redirect callback fix for reverse proxy / LiteSpeed header duplication
+    async redirect({ url, baseUrl }) {
+      // baseUrl can sometimes come as "https://a, https://a" -> take first
+      const safeBase = first(baseUrl) || process.env.NEXTAUTH_URL || "https://test.heiraza.com";
+
+      // Relative redirect
+      if (url.startsWith("/")) return `${safeBase}${url}`;
+
+      // Absolute redirect: only allow same origin
+      try {
+        const u = new URL(url);
+        const b = new URL(safeBase);
+        return u.origin === b.origin ? url : safeBase;
+      } catch {
+        return safeBase;
+      }
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

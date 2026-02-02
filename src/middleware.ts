@@ -33,6 +33,7 @@ export async function middleware(request: NextRequest) {
 
     // Use NEXTAUTH_URL from env if available (safest), otherwise construct from headers
     const baseUrl = process.env.NEXTAUTH_URL || `${proto}://${effectiveHost}`;
+    const origin = getFirstHeaderValue(request, "origin", baseUrl);
 
     // FORCE HTTPS (Skip for localhost development) - ONLY for safe methods to avoid breaking POSTs
     const isSafeMethod = request.method === "GET" || request.method === "HEAD";
@@ -71,7 +72,7 @@ export async function middleware(request: NextRequest) {
 
             // For pages, redirect to login
             // Use baseUrl to prevent ERR_INVALID_URL behind proxies
-            const url = new URL("/admin/login", baseUrl);
+            const url = new URL("/admin/login", origin);
             url.searchParams.set("callbackUrl", pathname);
             return NextResponse.redirect(url);
         }

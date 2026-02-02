@@ -41,7 +41,6 @@ export function BioSection({ artist, bioImages = [], maxChars = 500, className }
 
     const bio = artist.bio || "";
     const shouldTruncate = bio.length > maxChars;
-    const displayBio = isExpanded ? bio : bio.slice(0, maxChars);
 
     // Use bio images if available, otherwise fall back to hero image
     const images = bioImages.length > 0
@@ -142,13 +141,13 @@ export function BioSection({ artist, bioImages = [], maxChars = 500, className }
                         </h2>
 
                         {/* Bio Text with Read More */}
-                        <div className="prose prose-lg dark:prose-invert text-muted-foreground">
-                            {displayBio.split("\n\n").map((paragraph, index) => (
-                                <p key={index} className="leading-relaxed mb-4">
-                                    {paragraph}
-                                    {!isExpanded && shouldTruncate && index === displayBio.split("\n\n").length - 1 && "..."}
-                                </p>
-                            ))}
+                        <div
+                            className={`prose prose-lg dark:prose-invert text-muted-foreground transition-all duration-500 ease-in-out ${!isExpanded && shouldTruncate
+                                ? "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)]"
+                                : ""
+                                }`}
+                        >
+                            <div dangerouslySetInnerHTML={{ __html: bio }} />
                         </div>
 
                         {/* Read More / Show Less Button */}
@@ -161,8 +160,6 @@ export function BioSection({ artist, bioImages = [], maxChars = 500, className }
                                 <span className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>↓</span>
                             </button>
                         )}
-
-
                     </div>
                 </div>
             </div>

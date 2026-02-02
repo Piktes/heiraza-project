@@ -311,7 +311,7 @@ export default async function Home() {
         artist={{
           name: artistName,
           bio: bio?.content || "",
-          heroImage: heroImages[0]?.imageUrl || bio?.imageUrl, // Use first hero image or bio image as fallback
+          heroImage: bio?.imageUrl,
           // Map social links to flat structure
           facebookUrl: socialLinks.find(l => l.platform.toLowerCase().includes('facebook'))?.url,
           instagramUrl: socialLinks.find(l => l.platform.toLowerCase().includes('instagram'))?.url,

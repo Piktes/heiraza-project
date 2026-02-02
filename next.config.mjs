@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'test.heiraza.com',
+      },
     ],
   },
   experimental: {

@@ -497,12 +497,25 @@ async function moveGalleryImage(formData: FormData) {
 // ========================================
 async function toggleSetting(formData: FormData) {
   "use server";
+  console.log("toggleSetting called"); // Debug log
+
   const settings = await prisma.siteSettings.findFirst();
-  if (!settings) return { success: false };
+  if (!settings) {
+    console.log("toggleSetting: No settings found");
+    return { success: false };
+  }
+
   const settingName = formData.get("settingName") as string;
-  const currentValue = formData.get("currentValue") === "true";
+  const currentValueRaw = formData.get("currentValue");
+  const currentValue = currentValueRaw === "true";
+
+  console.log(`toggleSetting: Toggling ${settingName}, current: ${currentValueRaw} (${currentValue}), new: ${!currentValue}`); // Debug log
+
   const allowedSettings = ["isAudioPlayerVisible", "isShopVisible", "isSocialLinksVisible", "isYoutubeVisible", "youtubeAutoScroll", "heroSliderEnabled", "heroKenBurnsEffect"];
-  if (!allowedSettings.includes(settingName)) return { success: false };
+  if (!allowedSettings.includes(settingName)) {
+    console.log(`toggleSetting: Invalid setting name ${settingName}`);
+    return { success: false };
+  }
 
   await prisma.siteSettings.update({ where: { id: settings.id }, data: { [settingName]: !currentValue } });
 
@@ -547,7 +560,7 @@ export default async function AdminDashboard() {
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {/* TODAY'S OVERVIEW (Featured Card) */}
-            <div className="col-span-2 lg:col-span-5 glass-card p-6 flex flex-col sm:flex-row items-center justify-around gap-6 text-center sm:text-left bg-gradient-to-br from-white/5 to-white/10 border-white/10">
+            <div className="col-span-2 lg:col-span-5 glass-card p-6 flex flex-col sm:flex-row items-center justify-around gap-6 text-center sm:text-left">
               <Link href="/admin/messages" className="flex flex-col items-center sm:items-start gap-1 p-4 -m-4 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer w-full sm:w-auto">
                 <span className="text-muted-foreground text-xs uppercase tracking-widest group-hover:text-white transition-colors">Today's Unread</span>
                 <div className="flex items-center justify-center sm:justify-start gap-3">

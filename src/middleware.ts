@@ -52,23 +52,6 @@ export async function middleware(request: NextRequest) {
     }
 
     // Protect both /admin/* pages and /api/admin/* endpoints
-    // Note: With the new matcher, general /api/* requests might skipped, but we ensure /api/admin is protected
-    // However, since we are excluding /api/ in matcher, this middleware might NOT run for /api/admin if excluded.
-    // The user instruction said: "matcher’a api ve uploads hariç kuralı ekle" (exclude api and uploads).
-    // IF we exclude /api/, then we can't auth protect /api/admin here.
-    // BUT the user also said " /api/* (özellikle server actions ve auth) middleware ile “redirect” edilmemeli."
-    // AND " /api/debug/headers çalışacak"
-    // To allow /api/admin protection, we should probably exclude /api/ but maybe KEEP /api/admin?
-    // OR rely on route-level checks?
-    // The user's specific matcher regex was: '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|site.webmanifest|uploads|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'
-    // This explicitly excludes ALL /api/.
-    // If we do this, middleware won't run for /api/admin.
-    // Let's follow the user's specific instruction for the matcher first.
-    // If they have route-specific checks or if NextAuth handles it elsewhere, that's fine.
-    // Actually, src/app/api/admin/... usually has its own checks or relies on this?
-    // The user said "server action 500’leri bitecek". Server actions are POSTs to / page or similar, not necessarily /api.
-    // Let's implement the matcher as requested.
-
     const isProtectedPath = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
 
     if (isProtectedPath) {

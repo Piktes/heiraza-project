@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
     ImageIcon, Plus, Trash2, Eye, EyeOff, ChevronUp, ChevronDown,
@@ -19,23 +20,15 @@ interface HeroImage {
 interface HeroImageManagerProps {
     images: HeroImage[];
     sliderInterval: number;
-    onAddImages: (formData: FormData) => Promise<any>;
-    onToggle: (formData: FormData) => Promise<any>;
-    onDelete: (formData: FormData) => Promise<any>;
-    onMove: (formData: FormData) => Promise<any>;
-    onUpdateSpeed: (formData: FormData) => Promise<any>;
 }
 
 export function HeroImageManager({
-    images,
+    images: initialImages,
     sliderInterval,
-    onAddImages,
-    onToggle,
-    onDelete,
-    onMove,
-    onUpdateSpeed,
 }: HeroImageManagerProps) {
-    const [isPending, startTransition] = useTransition();
+    const router = useRouter();
+    const [images, setImages] = useState(initialImages);
+    const [isPending, setIsPending] = useState(false);
     const [previews, setPreviews] = useState<string[]>([]);
     const [speed, setSpeed] = useState(sliderInterval);
     const [speedSaved, setSpeedSaved] = useState(false);
@@ -43,6 +36,11 @@ export function HeroImageManager({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const activeCount = images.filter(img => img.isActive).length;
+
+    // Refresh data from server
+    const refreshData = () => {
+        router.refresh();
+    };
 
     // Handle file selection with compression for hero images
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,20 +69,36 @@ export function HeroImageManager({
         setIsCompressing(false);
     };
 
-    // Upload all previews
-    const handleUpload = () => {
+    // Upload all previews using fetch API
+    const handleUpload = async () => {
         if (previews.length === 0) return;
 
-        startTransition(async () => {
-            const formData = new FormData();
-            previews.forEach(preview => {
-                formData.append("imageData", preview);
+        setIsPending(true);
+        try {
+            const response = await fetch("/api/admin/hero", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ images: previews }),
             });
 
-            await onAddImages(formData);
-            setPreviews([]);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.images) {
+                    setImages(prev => [...prev, ...data.images]);
+                }
+                setPreviews([]);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                refreshData();
+            } else {
+                console.error("Upload failed:", await response.text());
+                alert("Failed to upload images. Please try again.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("Failed to upload images. Please try again.");
+        } finally {
+            setIsPending(false);
+        }
     };
 
     // Cancel upload
@@ -93,45 +107,100 @@ export function HeroImageManager({
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    // Handle speed update
-    const handleSpeedSave = () => {
-        startTransition(async () => {
-            const formData = new FormData();
-            formData.set("interval", speed.toString());
-            await onUpdateSpeed(formData);
-            setSpeedSaved(true);
-            setTimeout(() => setSpeedSaved(false), 2000);
-        });
+    // Handle speed update using fetch API
+    const handleSpeedSave = async () => {
+        setIsPending(true);
+        try {
+            const response = await fetch("/api/admin/hero", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "updateSpeed", interval: speed }),
+            });
+
+            if (response.ok) {
+                setSpeedSaved(true);
+                setTimeout(() => setSpeedSaved(false), 2000);
+            }
+        } catch (error) {
+            console.error("Speed update error:", error);
+        } finally {
+            setIsPending(false);
+        }
     };
 
-    // Handle toggle
-    const handleToggle = (id: number, isActive: boolean) => {
-        startTransition(async () => {
-            const formData = new FormData();
-            formData.set("id", id.toString());
-            formData.set("isActive", isActive.toString());
-            await onToggle(formData);
-        });
+    // Handle toggle using fetch API
+    const handleToggle = async (id: number, isActive: boolean) => {
+        setIsPending(true);
+        try {
+            const response = await fetch("/api/admin/hero", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "toggle", id, isActive }),
+            });
+
+            if (response.ok) {
+                setImages(prev => prev.map(img =>
+                    img.id === id ? { ...img, isActive: !img.isActive } : img
+                ));
+                refreshData();
+            }
+        } catch (error) {
+            console.error("Toggle error:", error);
+        } finally {
+            setIsPending(false);
+        }
     };
 
-    // Handle delete
-    const handleDelete = (id: number) => {
+    // Handle delete using fetch API
+    const handleDelete = async (id: number) => {
         if (!confirm("Delete this hero image?")) return;
-        startTransition(async () => {
-            const formData = new FormData();
-            formData.set("id", id.toString());
-            await onDelete(formData);
-        });
+
+        setIsPending(true);
+        try {
+            const response = await fetch("/api/admin/hero", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id }),
+            });
+
+            if (response.ok) {
+                setImages(prev => prev.filter(img => img.id !== id));
+                refreshData();
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+        } finally {
+            setIsPending(false);
+        }
     };
 
-    // Handle move
-    const handleMove = (id: number, direction: "up" | "down") => {
-        startTransition(async () => {
-            const formData = new FormData();
-            formData.set("id", id.toString());
-            formData.set("direction", direction);
-            await onMove(formData);
-        });
+    // Handle move using fetch API
+    const handleMove = async (id: number, direction: "up" | "down") => {
+        setIsPending(true);
+        try {
+            const response = await fetch("/api/admin/hero", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "move", id, direction }),
+            });
+
+            if (response.ok) {
+                // Reorder locally
+                const currentIndex = images.findIndex(img => img.id === id);
+                const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+                if (targetIndex >= 0 && targetIndex < images.length) {
+                    const newImages = [...images];
+                    [newImages[currentIndex], newImages[targetIndex]] =
+                        [newImages[targetIndex], newImages[currentIndex]];
+                    setImages(newImages);
+                }
+                refreshData();
+            }
+        } catch (error) {
+            console.error("Move error:", error);
+        } finally {
+            setIsPending(false);
+        }
     };
 
     return (

@@ -8,24 +8,44 @@ const PUBLIC_PATHS = [
     "/api/auth", // next-auth endpoints
 ];
 
+/**
+ * Helper to get first value from potentially comma-separated header
+ * LiteSpeed/Nginx proxies can duplicate headers, causing "value, value" format
+ */
+function getFirstHeaderValue(request: NextRequest, headerName: string, fallback: string): string {
+    const value = request.headers.get(headerName);
+    if (!value) return fallback;
+    // Take only the FIRST value if comma-separated (proxy duplication fix)
+    return value.split(',')[0].trim();
+}
+
 export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
     // 1. Safe parsing of host and protocol for Reverse Proxy compatibility (LiteSpeed/Nginx)
-    const host = request.headers.get('host')?.split(',')[0].trim() || 'localhost:3000'; // Fallback to localhost if missing
-    const proto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || 'http'; // Default to http if missing
-    const baseUrl = `${proto}://${host}`;
+    // CRITICAL: Headers may be duplicated like "value, value" - always take first
+    const host = getFirstHeaderValue(request, 'host', 'localhost:3000');
+    const forwardedHost = getFirstHeaderValue(request, 'x-forwarded-host', host);
+    const proto = getFirstHeaderValue(request, 'x-forwarded-proto', 'http');
+
+    // Use forwarded host if available (behind proxy), otherwise use host header
+    const effectiveHost = forwardedHost || host;
+    const baseUrl = `${proto}://${effectiveHost}`;
 
     // FORCE HTTPS (Skip for localhost development)
     if (process.env.NODE_ENV === 'production' && proto === 'http') {
-        return NextResponse.redirect(`https://${host}${pathname}`, 301);
+        return NextResponse.redirect(`https://${effectiveHost}${pathname}`, 301);
     }
 
     // Check if this path is public (login or auth API)
     const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
 
     if (isPublicPath) {
-        return NextResponse.next();
+        // Even for public paths, normalize headers to prevent issues in server actions
+        const response = NextResponse.next();
+        response.headers.set('x-normalized-host', effectiveHost);
+        response.headers.set('x-normalized-proto', proto);
+        return response;
     }
 
     // Protect both /admin/* pages and /api/admin/* endpoints
@@ -54,9 +74,23 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    return NextResponse.next();
+    // For all requests, set normalized headers to prevent duplication issues
+    const response = NextResponse.next();
+    response.headers.set('x-normalized-host', effectiveHost);
+    response.headers.set('x-normalized-proto', proto);
+    return response;
 }
 
+// Match ALL routes so we can normalize headers for server actions
 export const config = {
-    matcher: ["/admin/:path*", "/api/admin/:path*"],
+    matcher: [
+        /*
+         * Match all request paths except:
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public folder files
+         */
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    ],
 };

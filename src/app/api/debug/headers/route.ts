@@ -7,6 +7,8 @@ export async function GET() {
 
     return NextResponse.json({
         host: pick("host"),
+        origin: pick("origin"),
+        referer: pick("referer"),
         x_forwarded_host: pick("x-forwarded-host"),
         x_forwarded_proto: pick("x-forwarded-proto"),
         forwarded: pick("forwarded"),

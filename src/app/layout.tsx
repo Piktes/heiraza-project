@@ -49,10 +49,10 @@ const baseMetadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/logo.jpg", type: "image/jpeg" },
+      { url: "/favicon.png", type: "image/png" },
     ],
     apple: "/apple-touch-icon.png",
-    shortcut: "/logo.jpg",
+    shortcut: "/favicon.png",
   },
   manifest: "/site.webmanifest",
 };

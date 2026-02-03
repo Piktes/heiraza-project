@@ -110,22 +110,25 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
             >
               {/* Card Wrapper - Solid background, rounded, bordered */}
               <div className="bg-neutral-100 dark:bg-neutral-900 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-accent-coral/10 hover:-translate-y-1">
-                {/* Image Container - Fixed 3:4 aspect ratio */}
-                <div className="aspect-[3/4] relative">
-                  {/* UploadedImage handles /uploads/ vs external images */}
-                  <UploadedImage
-                    src={getImageUrl(image.thumbnailUrl || image.imageUrl)}
-                    alt={image.title || `Gallery image ${idx + 1}`}
-                    fill
-                    className="object-cover p-0 transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                {/* Image Container - Fixed 3:4 aspect ratio with polaroid-style padding */}
+                <div className="aspect-[3/4] relative p-3">
+                  {/* Inner frame for the actual image */}
+                  <div className="relative w-full h-full overflow-hidden rounded-lg">
+                    {/* UploadedImage handles /uploads/ vs external images */}
+                    <UploadedImage
+                      src={getImageUrl(image.thumbnailUrl || image.imageUrl)}
+                      alt={image.title || `Gallery image ${idx + 1}`}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
 
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-xl">
-                        <ZoomIn size={24} className="text-white" />
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-xl">
+                          <ZoomIn size={24} className="text-white" />
+                        </div>
                       </div>
                     </div>
                   </div>

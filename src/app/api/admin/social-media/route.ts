@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { logAction } from "@/lib/logger";
-// Force sync timestamp: 2026-02-01 16:15
+// Force sync timestamp: 2026-02-03 21:52
+
+// OPTIONS - Handle CORS preflight
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Allow': 'GET, POST, PUT, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        },
+    });
+}
 
 // GET - Fetch all social media links
 export async function GET() {
@@ -89,4 +101,9 @@ export async function PUT(request: NextRequest) {
         console.error("Error updating social media:", error);
         return NextResponse.json({ success: false, error: "Failed to update" }, { status: 500 });
     }
+}
+
+// POST - Alternative to PUT for environments where PUT is blocked
+export async function POST(request: NextRequest) {
+    return PUT(request);
 }

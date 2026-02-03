@@ -101,7 +101,7 @@ export default function SocialMediaPage() {
             }));
 
             const res = await fetch("/api/admin/social-media", {
-                method: "PUT",
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ updates }),
             });

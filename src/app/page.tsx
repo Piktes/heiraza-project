@@ -311,7 +311,6 @@ export default async function Home() {
         artist={{
           name: artistName,
           bio: bio?.content || "",
-          heroImage: bio?.imageUrl,
           // Map social links to flat structure
           facebookUrl: socialLinks.find(l => l.platform.toLowerCase().includes('facebook'))?.url,
           instagramUrl: socialLinks.find(l => l.platform.toLowerCase().includes('instagram'))?.url,

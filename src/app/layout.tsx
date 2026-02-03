@@ -48,8 +48,11 @@ const baseMetadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/logo.jpg", type: "image/jpeg" },
+    ],
     apple: "/apple-touch-icon.png",
+    shortcut: "/logo.jpg",
   },
   manifest: "/site.webmanifest",
 };

@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
 
     // 1. Safe parsing of host and protocol for Reverse Proxy compatibility (LiteSpeed/Nginx)
     // CRITICAL: Headers may be duplicated like "value, value" - always take first
-    const host = getFirstHeaderValue(request, 'host', 'localhost:3000');
+    const host = getFirstHeaderValue(request, 'host', 'localhost:3001');
     const forwardedHost = getFirstHeaderValue(request, 'x-forwarded-host', host);
     const proto = getFirstHeaderValue(request, 'x-forwarded-proto', 'http');
 

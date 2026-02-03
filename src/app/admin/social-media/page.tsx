@@ -57,10 +57,23 @@ export default function SocialMediaPage() {
                     if (json.success && Array.isArray(json.data)) {
                         const newFormData = { ...formData };
                         json.data.forEach((item: any) => {
-                            // Find the platform config that matches this item's platform
-                            const config = PLATFORMS.find(p => p.platform === item.platform);
-                            if (config) {
-                                newFormData[config.key as keyof SocialLinks] = item.url || "";
+                            // Map database platform names to form keys
+                            // Database: facebook, instagram, tiktok, youtube, spotify, appleMusic, soundcloud, x
+                            const platformToKey: Record<string, keyof SocialLinks> = {
+                                'facebook': 'facebookUrl',
+                                'instagram': 'instagramUrl',
+                                'tiktok': 'tiktokUrl',
+                                'youtube': 'youtubeUrl',
+                                'spotify': 'spotifyUrl',
+                                'appleMusic': 'appleMusicUrl',
+                                'soundcloud': 'soundcloudUrl',
+                                'x': 'twitterUrl',
+                                // Also handle if platform is stored differently
+                                'twitter': 'twitterUrl',
+                            };
+                            const key = platformToKey[item.platform];
+                            if (key) {
+                                newFormData[key] = item.url || "";
                             }
                         });
                         setFormData(newFormData);

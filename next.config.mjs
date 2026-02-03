@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
+
+// Inject build time at build for version tracking
+const buildTime = new Date().toISOString();
+
 const nextConfig = {
+  // Expose build time to client for version mismatch detection
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: buildTime,
+  },
   images: {
     // Disable image optimization to allow loading images from /uploads/ on production
     // This fixes the "lazy-imageset" issue where images fail to load through nginx
@@ -21,8 +29,8 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      // Increased to 50mb to handle larger audio/track file uploads
-      bodySizeLimit: '50mb',
+      // Limit to 30mb for admin file uploads (matches nginx client_max_body_size)
+      bodySizeLimit: '30mb',
       // Allow server actions from these origins (fixes LiteSpeed proxy issues)
       allowedOrigins: [
         'test.heiraza.com',

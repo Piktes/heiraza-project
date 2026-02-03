@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { UploadedImage } from "@/components/ui/uploaded-image";
 import { getImageUrl } from "@/lib/image-url";
 
 
@@ -78,7 +78,8 @@ export function BioSection({ artist, bioImages = [], maxChars = 500, className }
                                 <>
                                     {/* Current Image */}
                                     <div className="absolute inset-0">
-                                        <Image
+                                        {/* UploadedImage handles /uploads/ vs external images */}
+                                        <UploadedImage
                                             src={getImageUrl(images[currentImageIndex].imageUrl)}
                                             alt={images[currentImageIndex].caption || artist.name || "Artist"}
                                             fill

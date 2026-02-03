@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { X, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
-import { getImageUrl } from "@/lib/image-url";
+import { UploadedImage } from "@/components/ui/uploaded-image";
+import { getImageUrl, isUploadedImage } from "@/lib/image-url";
 
 interface GalleryImage {
   id: number;
@@ -112,8 +112,8 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
               <div className="bg-neutral-100 dark:bg-neutral-900 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-accent-coral/10 hover:-translate-y-1">
                 {/* Image Container - Fixed 3:4 aspect ratio */}
                 <div className="aspect-[3/4] relative">
-                  {/* Image - object-cover ensures filling without empty space */}
-                  <Image
+                  {/* UploadedImage handles /uploads/ vs external images */}
+                  <UploadedImage
                     src={getImageUrl(image.thumbnailUrl || image.imageUrl)}
                     alt={image.title || `Gallery image ${idx + 1}`}
                     fill
@@ -189,7 +189,8 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
               className="relative max-w-5xl max-h-[85vh] w-full h-full m-4 sm:m-8"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image
+              {/* UploadedImage handles /uploads/ vs external images */}
+              <UploadedImage
                 src={getImageUrl(filteredImages[selectedImage].imageUrl)}
                 alt={filteredImages[selectedImage].title || "Gallery image"}
                 fill

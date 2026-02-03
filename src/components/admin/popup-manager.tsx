@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import Image from "next/image";
+// Using native <img> for /uploads/ images to bypass Next.js Image Optimizer
 import {
     Bell, Plus, Trash2, Eye, EyeOff, Calendar, Link as LinkIcon,
     Upload, Loader2, X, ExternalLink, Edit2, Zap, Clock
@@ -292,7 +292,8 @@ export function PopupManager({
                                 {imagePreview ? (
                                     <div className="relative h-10 flex items-center gap-2">
                                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                                            <Image src={imagePreview} alt="Preview" width={40} height={40} className="object-cover" />
+                                            {/* Native img for base64 preview */}
+                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                                         </div>
                                         <span className="text-sm text-muted-foreground">New image</span>
                                         <button onClick={() => { setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="text-red-500 hover:text-red-600">
@@ -302,7 +303,8 @@ export function PopupManager({
                                 ) : editingPopup?.imageUrl && keepExistingImage ? (
                                     <div className="relative h-10 flex items-center gap-2">
                                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                                            <Image src={editingPopup.imageUrl} alt="Current" width={40} height={40} className="object-cover" />
+                                            {/* Native img for /uploads/ images */}
+                                            <img src={editingPopup.imageUrl} alt="Current" className="w-full h-full object-cover" />
                                         </div>
                                         <span className="text-sm text-muted-foreground">Current image</span>
                                         <button onClick={() => setKeepExistingImage(false)} className="text-red-500 hover:text-red-600 text-xs">
@@ -430,15 +432,14 @@ export function PopupManager({
                                     : "bg-muted/30 border-muted opacity-60"
                                     }`}
                             >
-                                {/* Image */}
                                 <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                     {popup.imageUrl ? (
-                                        <Image
+                                        /* Native img for /uploads/ images to bypass Image Optimizer */
+                                        <img
                                             src={popup.imageUrl}
                                             alt={popup.title}
-                                            width={64}
-                                            height={64}
                                             className="object-cover w-full h-full"
+                                            loading="lazy"
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">

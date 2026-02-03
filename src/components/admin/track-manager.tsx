@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
+// Using native <img> for /uploads/ images to bypass Next.js Image Optimizer
 import {
   Music2, Plus, Trash2, GripVertical, Eye, EyeOff,
   Upload, Link as LinkIcon, X, Pencil
@@ -107,7 +107,7 @@ function SortableTrackItem({
       {/* Cover */}
       <div className="w-16 h-16 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex-shrink-0">
         {track.coverImage ? (
-          <Image src={track.coverImage} alt={track.title} width={64} height={64} className="object-cover w-full h-full" />
+          <img src={track.coverImage} alt={track.title} className="object-cover w-full h-full" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Music2 size={24} className="text-muted-foreground" />
@@ -438,7 +438,8 @@ export function TrackManager({ tracks, onAdd, onToggle, onDelete, onMove, onReor
 
               {coverPreview ? (
                 <div className="relative aspect-square max-w-[200px] rounded-xl overflow-hidden bg-neutral-800">
-                  <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
+                  {/* Native img for base64 preview */}
+                  <img src={coverPreview} alt="Cover preview" className="absolute inset-0 w-full h-full object-cover" />
                   <button
                     onClick={() => { setCoverPreview(null); if (coverFileRef.current) coverFileRef.current.value = ""; }}
                     className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"

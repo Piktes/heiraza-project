@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Playfair_Display, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { VersionCheck } from "@/components/version-check";
 import "./globals.css";
 
 // Sharp/Runic font for brand name and headings
@@ -120,6 +121,7 @@ export default function RootLayout({
             disableTransitionOnChange={false}
           >
             {children}
+            <VersionCheck />
           </ThemeProvider>
         </AuthProvider>
       </body>

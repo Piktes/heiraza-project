@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
+import { UploadedImage } from "@/components/ui/uploaded-image";
 import { getImageUrl } from "@/lib/image-url";
 
 interface HeroImage {
@@ -63,14 +63,14 @@ export function HeroSlider({
               className={`absolute inset-0 ${kenBurnsEffect && isActive ? "animate-ken-burns" : ""
                 }`}
             >
-              <Image
+              {/* UploadedImage handles /uploads/ vs external images */}
+              <UploadedImage
                 src={getImageUrl(slide.imageUrl)}
                 alt={slide.altText || "Hero background"}
                 fill
                 className="object-cover object-center"
                 sizes="100vw"
                 priority={idx === 0}
-                quality={90}
               />
             </div>
           </div>

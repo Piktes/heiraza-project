@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Image from "next/image";
+// Using native <img> for /uploads/ images to bypass Next.js Image Optimizer
 import {
     ImageIcon, Plus, Trash2, Eye, EyeOff,
     Upload, X, Loader2, Grid3X3, ArrowUp, ArrowDown
@@ -212,12 +212,12 @@ export function GalleryManager({
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                 {selectedImages.map((img, idx) => (
                                     <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
-                                        <Image
+                                        {/* Native img for base64 previews */}
+                                        <img
                                             src={img}
                                             alt={`Selected ${idx + 1}`}
-                                            fill
-                                            className="object-contain bg-black/5"
-                                            sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
+                                            className="absolute inset-0 w-full h-full object-contain bg-black/5"
+                                            loading="lazy"
                                         />
                                         <button
                                             onClick={() => removeSelectedImage(idx)}
@@ -323,12 +323,12 @@ export function GalleryManager({
                                 : "border-muted opacity-50"
                                 }`}
                         >
-                            <Image
+                            {/* Native img for /uploads/ images to bypass Image Optimizer */}
+                            <img
                                 src={image.imageUrl}
                                 alt={image.title || "Gallery image"}
-                                fill
-                                className="object-contain bg-black/10 w-full h-full"
-                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                                className="absolute inset-0 w-full h-full object-contain bg-black/10"
+                                loading="lazy"
                             />
 
                             {/* Overlay with actions */}

@@ -4,6 +4,9 @@ import path from "path";
 
 type UploadFolder = "hero" | "events" | "products" | "general";
 
+// 30MB limit (matches nginx client_max_body_size)
+const MAX_FILE_SIZE_BYTES = 30 * 1024 * 1024;
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -17,6 +20,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check file size (base64 is ~33% larger than raw bytes)
+    const base64Content = image.replace(/^data:image\/\w+;base64,/, "");
+    const estimatedBytes = Math.ceil((base64Content.length * 3) / 4);
+
+    if (estimatedBytes > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (estimatedBytes / (1024 * 1024)).toFixed(2);
+      return NextResponse.json(
+        { error: `File too large (${sizeMB}MB). Maximum allowed size is 30MB.` },
+        { status: 413 }
+      );
+    }
+
     // Create uploads directory if it doesn't exist
     // Use process.cwd() - works on any VPS
     const uploadsDir = path.join(process.cwd(), "public", "uploads", folder);
@@ -25,8 +40,7 @@ export async function POST(request: NextRequest) {
 
     await mkdir(uploadsDir, { recursive: true });
 
-    // Extract base64 content
-    const base64Content = image.replace(/^data:image\/\w+;base64,/, "");
+    // Extract base64 content and convert to buffer
     const buffer = Buffer.from(base64Content, "base64");
 
     // Generate unique filename

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2 } from "lucide-react";
+import { UploadedImage } from "@/components/ui/uploaded-image";
 import { getImageUrl } from "@/lib/image-url";
 
 interface Track {
@@ -243,7 +243,7 @@ export function HeroAudioPlayer({ tracks, isVisible = true }: HeroAudioPlayerPro
             shadow-lg
           ">
             {currentTrack?.coverImage ? (
-              <Image
+              <UploadedImage
                 src={getImageUrl(currentTrack.coverImage)}
                 alt={currentTrack.title}
                 fill

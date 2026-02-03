@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+// Using native <img> for /uploads/ images to bypass Next.js Image Optimizer
 import {
     ImageIcon, Plus, Trash2, Eye, EyeOff, ChevronUp, ChevronDown,
     Upload, Loader2, Settings, Clock
@@ -288,7 +288,8 @@ export function HeroImageManager({
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {previews.map((preview, index) => (
                                 <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-muted">
-                                    <Image src={preview} alt={`Preview ${index + 1}`} fill className="object-cover" />
+                                    {/* Native img for base64 previews */}
+                                    <img src={preview} alt={`Preview ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                                 </div>
                             ))}
                         </div>
@@ -349,14 +350,13 @@ export function HeroImageManager({
                                     {index + 1}
                                 </div>
 
-                                {/* Image Preview - Smaller on mobile */}
                                 <div className="w-20 h-14 sm:w-32 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                                    <Image
+                                    {/* Native img for /uploads/ images to bypass Image Optimizer */}
+                                    <img
                                         src={image.imageUrl}
                                         alt={image.altText || `Hero ${index + 1}`}
-                                        width={128}
-                                        height={80}
                                         className="object-cover w-full h-full"
+                                        loading="lazy"
                                     />
                                 </div>
 

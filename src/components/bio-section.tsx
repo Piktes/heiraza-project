@@ -15,15 +15,6 @@ interface BioImage {
 interface Artist {
     name?: string | null;
     bio: string;
-    // Yeni DB yapımıza uygun düz sütunlar:
-    facebookUrl?: string | null;
-    instagramUrl?: string | null;
-    tiktokUrl?: string | null;
-    youtubeUrl?: string | null;
-    spotifyUrl?: string | null;
-    twitterUrl?: string | null;
-    soundcloudUrl?: string | null;
-    appleMusicUrl?: string | null;
 }
 
 interface BioSectionProps {

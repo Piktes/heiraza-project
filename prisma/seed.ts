@@ -45,12 +45,16 @@ async function main() {
     }
   });
 
-  // 2. Ensure Social Media Links exist
+  // 2. Ensure Social Media Links exist (all 8 platforms, all active)
   const platforms = [
-    { platform: 'facebook', url: 'https://facebook.com', isVisible: true },
-    { platform: 'instagram', url: 'https://instagram.com', isVisible: true },
-    { platform: 'youtube', url: 'https://youtube.com', isVisible: true },
-    { platform: 'spotify', url: 'https://spotify.com', isVisible: true },
+    { platform: 'facebook', url: 'https://facebook.com/heiraza', isVisible: true, sortOrder: 0 },
+    { platform: 'instagram', url: 'https://instagram.com/heiraza', isVisible: true, sortOrder: 1 },
+    { platform: 'tiktok', url: 'https://tiktok.com/@heiraza', isVisible: true, sortOrder: 2 },
+    { platform: 'youtube', url: 'https://youtube.com/c/heiraza', isVisible: true, sortOrder: 3 },
+    { platform: 'spotify', url: 'https://open.spotify.com/artist/heiraza', isVisible: true, sortOrder: 4 },
+    { platform: 'appleMusic', url: 'https://music.apple.com/artist/heiraza', isVisible: true, sortOrder: 5 },
+    { platform: 'soundcloud', url: 'https://soundcloud.com/heiraza', isVisible: true, sortOrder: 6 },
+    { platform: 'x', url: 'https://x.com/heiraza', isVisible: true, sortOrder: 7 },
   ];
 
   for (const p of platforms) {

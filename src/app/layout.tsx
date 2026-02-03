@@ -92,7 +92,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "en_US",
       images: [
         {
-          url: "/og-image.jpg",
+          url: "/og-image.png",
           width: 1200,
           height: 630,
           alt: "Heiraza - Official Website",
@@ -103,7 +103,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "HEIRAZA | Official Website",
       description: "Welcome to the official website of HEIRAZA.",
-      images: ["/og-image.jpg"],
+      images: ["/og-image.png"],
     },
   };
 }

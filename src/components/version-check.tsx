@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 /**
  * Client-side component that detects server action mismatches.
  * Shows a reload prompt when client build doesn't match server build.
+ * Uses BUILD_ID (stable per build) instead of timestamp.
  */
-
-const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME || "";
 
 export function VersionCheck() {
     const [showReloadPrompt, setShowReloadPrompt] = useState(false);
-    const [serverBuildTime, setServerBuildTime] = useState<string | null>(null);
+    const initialBuildIdRef = useRef<string | null>(null);
+    const hasCheckedRef = useRef(false);
 
     const checkVersion = useCallback(async () => {
         try {
@@ -23,13 +23,22 @@ export function VersionCheck() {
             if (!res.ok) return;
 
             const data = await res.json();
-            setServerBuildTime(data.buildTime);
 
-            // Compare build times - if different, prompt reload
-            if (BUILD_TIME && data.buildTime && BUILD_TIME !== data.buildTime) {
+            // Store the first build ID we see (from when page loaded)
+            if (!hasCheckedRef.current) {
+                initialBuildIdRef.current = data.buildId;
+                hasCheckedRef.current = true;
+                return; // Don't show on first check
+            }
+
+            // Only show if build ID changed AFTER page was loaded
+            if (initialBuildIdRef.current &&
+                data.buildId &&
+                data.buildId !== "development" &&
+                initialBuildIdRef.current !== data.buildId) {
                 console.warn(
-                    "[Version Mismatch] Client:", BUILD_TIME,
-                    "Server:", data.buildTime
+                    "[Version Mismatch] Initial:", initialBuildIdRef.current,
+                    "Current:", data.buildId
                 );
                 setShowReloadPrompt(true);
             }
@@ -40,11 +49,11 @@ export function VersionCheck() {
     }, []);
 
     useEffect(() => {
-        // Check on mount
+        // Check on mount (to store initial build ID)
         checkVersion();
 
-        // Check periodically (every 5 minutes)
-        const interval = setInterval(checkVersion, 5 * 60 * 1000);
+        // Check periodically (every 2 minutes) for new deployments
+        const interval = setInterval(checkVersion, 2 * 60 * 1000);
 
         // Also check when window regains focus (user returns to tab)
         const handleFocus = () => checkVersion();
@@ -90,3 +99,4 @@ export function VersionCheck() {
         </div>
     );
 }
+

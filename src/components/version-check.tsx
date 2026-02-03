@@ -9,6 +9,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
  */
 
 export function VersionCheck() {
+    // DISABLED: Causing false positives. The atomic deploy script is sufficient.
+    return null;
+
     const [showReloadPrompt, setShowReloadPrompt] = useState(false);
     const initialBuildIdRef = useRef<string | null>(null);
     const hasCheckedRef = useRef(false);

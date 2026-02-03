@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2 } from "lucide-react";
+import { getImageUrl } from "@/lib/image-url";
 
 interface Track {
   id: number;
@@ -243,7 +244,7 @@ export function HeroAudioPlayer({ tracks, isVisible = true }: HeroAudioPlayerPro
           ">
             {currentTrack?.coverImage ? (
               <Image
-                src={currentTrack.coverImage}
+                src={getImageUrl(currentTrack.coverImage)}
                 alt={currentTrack.title}
                 fill
                 className="object-cover"

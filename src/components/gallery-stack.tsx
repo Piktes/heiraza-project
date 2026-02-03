@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCards, Pagination } from "swiper/modules";
 import { X, Maximize2, ChevronLeft, ChevronRight } from "lucide-react";
+import { getImageUrl } from "@/lib/image-url";
 
 import "swiper/css";
 import "swiper/css/effect-cards";
@@ -99,7 +100,7 @@ export function GalleryStack({ images, className }: GalleryStackProps) {
                                 >
                                     {/* Image with object-contain for FULL visibility, no cropping */}
                                     <Image
-                                        src={image.thumbnailUrl || image.imageUrl}
+                                        src={getImageUrl(image.thumbnailUrl || image.imageUrl)}
                                         alt={image.title || `Gallery photo ${index + 1}`}
                                         fill
                                         className="w-full h-full object-contain p-3"
@@ -175,7 +176,7 @@ export function GalleryStack({ images, className }: GalleryStackProps) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Image
-                            src={images[lightboxIndex].imageUrl}
+                            src={getImageUrl(images[lightboxIndex].imageUrl)}
                             alt={images[lightboxIndex].title || "Gallery image"}
                             fill
                             className="object-contain"

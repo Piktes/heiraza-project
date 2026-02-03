@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { X, ExternalLink } from "lucide-react";
+import { getImageUrl } from "@/lib/image-url";
 
 /**
  * PopupCard - Shared component for popup display
@@ -52,7 +53,7 @@ export function PopupCard({
             {imageUrl && (
                 <div className="relative bg-neutral-100 dark:bg-neutral-900">
                     <Image
-                        src={imageUrl}
+                        src={getImageUrl(imageUrl)}
                         alt={title}
                         width={600}
                         height={400}

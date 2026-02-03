@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { getImageUrl } from "@/lib/image-url";
 
 interface HeroImage {
   id: number;
@@ -63,7 +64,7 @@ export function HeroSlider({
                 }`}
             >
               <Image
-                src={slide.imageUrl}
+                src={getImageUrl(slide.imageUrl)}
                 alt={slide.altText || "Hero background"}
                 fill
                 className="object-cover object-center"

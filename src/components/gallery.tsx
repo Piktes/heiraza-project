@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { X, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
+import { getImageUrl } from "@/lib/image-url";
 
 interface GalleryImage {
   id: number;
@@ -113,7 +114,7 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
                 <div className="aspect-[3/4] relative">
                   {/* Image - object-cover ensures filling without empty space */}
                   <Image
-                    src={image.thumbnailUrl || image.imageUrl}
+                    src={getImageUrl(image.thumbnailUrl || image.imageUrl)}
                     alt={image.title || `Gallery image ${idx + 1}`}
                     fill
                     className="object-cover p-0 transition-transform duration-500 group-hover:scale-105"
@@ -189,7 +190,7 @@ export function Gallery({ images, columns = 3, className }: GalleryProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <Image
-                src={filteredImages[selectedImage].imageUrl}
+                src={getImageUrl(filteredImages[selectedImage].imageUrl)}
                 alt={filteredImages[selectedImage].title || "Gallery image"}
                 fill
                 className="object-contain"

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getImageUrl } from "@/lib/image-url";
 
 
 interface BioImage {
@@ -78,7 +79,7 @@ export function BioSection({ artist, bioImages = [], maxChars = 500, className }
                                     {/* Current Image */}
                                     <div className="absolute inset-0">
                                         <Image
-                                            src={images[currentImageIndex].imageUrl}
+                                            src={getImageUrl(images[currentImageIndex].imageUrl)}
                                             alt={images[currentImageIndex].caption || artist.name || "Artist"}
                                             fill
                                             className="object-cover transition-transform duration-700 group-hover:scale-105"

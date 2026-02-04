@@ -311,15 +311,6 @@ export default async function Home() {
         artist={{
           name: artistName,
           bio: bio?.content || "",
-          // Map social links to flat structure
-          facebookUrl: socialLinks.find(l => l.platform.toLowerCase().includes('facebook'))?.url,
-          instagramUrl: socialLinks.find(l => l.platform.toLowerCase().includes('instagram'))?.url,
-          tiktokUrl: socialLinks.find(l => l.platform.toLowerCase().includes('tiktok'))?.url,
-          youtubeUrl: socialLinks.find(l => l.platform.toLowerCase().includes('youtube'))?.url,
-          spotifyUrl: socialLinks.find(l => l.platform.toLowerCase().includes('spotify'))?.url,
-          twitterUrl: socialLinks.find(l => l.platform.toLowerCase().includes('twitter'))?.url,
-          soundcloudUrl: socialLinks.find(l => l.platform.toLowerCase().includes('soundcloud'))?.url,
-          appleMusicUrl: socialLinks.find(l => l.platform.toLowerCase().includes('apple'))?.url,
         }}
         bioImages={bio?.images || []}
         className={getSectionBg('about')}

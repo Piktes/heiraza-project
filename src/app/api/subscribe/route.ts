@@ -23,10 +23,27 @@ function isRateLimited(identifier: string): boolean {
   return false;
 }
 
-// Get client IP for additional rate limiting
+// Get client IP for additional rate limiting - check multiple headers
 function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
+  // Check multiple headers in order of reliability
+  const xForwardedFor = request.headers.get("x-forwarded-for");
+  const xRealIP = request.headers.get("x-real-ip");
+  const cfConnectingIP = request.headers.get("cf-connecting-ip");
+
+  let ip = "unknown";
+
+  if (xForwardedFor) {
+    // x-forwarded-for can contain multiple IPs, take the first (client)
+    ip = xForwardedFor.split(",")[0].trim();
+  } else if (xRealIP) {
+    ip = xRealIP.trim();
+  } else if (cfConnectingIP) {
+    ip = cfConnectingIP.trim();
+  }
+
+  // Log for debugging (remove in production if noisy)
+  console.log(`[Subscribe] IP detection: x-forwarded-for=${xForwardedFor}, x-real-ip=${xRealIP}, result=${ip}`);
+
   return ip;
 }
 
@@ -40,18 +57,22 @@ interface GeoLocation {
 async function getGeoLocation(ip: string): Promise<GeoLocation> {
   try {
     if (ip === "unknown" || ip === "127.0.0.1" || ip === "::1") {
+      console.log(`[Subscribe] Skipping geolocation for local/unknown IP: ${ip}`);
       return { country: null, city: null, countryCode: null };
     }
 
+    console.log(`[Subscribe] Looking up geolocation for IP: ${ip}`);
     const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,countryCode`, {
       next: { revalidate: 0 },
     });
 
     if (!response.ok) {
+      console.log(`[Subscribe] Geolocation API returned ${response.status}`);
       return { country: null, city: null, countryCode: null };
     }
 
     const data = await response.json();
+    console.log(`[Subscribe] Geolocation result:`, data);
 
     if (data.status === "success") {
       return {
@@ -63,7 +84,7 @@ async function getGeoLocation(ip: string): Promise<GeoLocation> {
 
     return { country: null, city: null, countryCode: null };
   } catch (error) {
-    console.error("Geolocation lookup failed:", error);
+    console.error("[Subscribe] Geolocation lookup failed:", error);
     return { country: null, city: null, countryCode: null };
   }
 }

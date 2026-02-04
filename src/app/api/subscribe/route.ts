@@ -30,6 +30,44 @@ function getClientIP(request: NextRequest): string {
   return ip;
 }
 
+// Fetch geolocation from IP (privacy-focused: no raw IP stored after lookup)
+interface GeoLocation {
+  country: string | null;
+  city: string | null;
+  countryCode: string | null;
+}
+
+async function getGeoLocation(ip: string): Promise<GeoLocation> {
+  try {
+    if (ip === "unknown" || ip === "127.0.0.1" || ip === "::1") {
+      return { country: null, city: null, countryCode: null };
+    }
+
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,countryCode`, {
+      next: { revalidate: 0 },
+    });
+
+    if (!response.ok) {
+      return { country: null, city: null, countryCode: null };
+    }
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+      return {
+        country: data.country || null,
+        city: data.city || null,
+        countryCode: data.countryCode || null,
+      };
+    }
+
+    return { country: null, city: null, countryCode: null };
+  } catch (error) {
+    console.error("Geolocation lookup failed:", error);
+    return { country: null, city: null, countryCode: null };
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -86,12 +124,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new subscriber with event alerts preference
+    // Fetch geolocation (non-blocking, fail silently)
+    const geoLocation = await getGeoLocation(clientIP);
+
+    // Create new subscriber with event alerts preference and location
     await prisma.subscriber.create({
       data: {
         email: normalizedEmail,
         receiveEventAlerts,
         ipAddress: clientIP !== "unknown" ? clientIP : null,
+        country: geoLocation.country,
+        city: geoLocation.city,
+        countryCode: geoLocation.countryCode,
       },
     });
 

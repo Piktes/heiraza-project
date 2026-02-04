@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { normalizeCountryName } from "@/lib/country-utils";
+import { normalizeCountry } from "@/lib/country-utils";
 
 // GET - Export messages data for PDF/Excel
 export async function GET(request: NextRequest) {
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
             name: m.name,
             email: m.email,
             message: m.message.length > 100 ? m.message.substring(0, 100) + "..." : m.message,
-            country: normalizeCountryName(m.country || "Unknown"),
+            country: normalizeCountry(m.country || "Unknown") || "Unknown",
             city: m.city || "Unknown",
             replied: m.replied ? "Yes" : "No",
             replyText: m.replyText ? (m.replyText.length > 50 ? m.replyText.substring(0, 50) + "..." : m.replyText) : "-",

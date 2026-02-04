@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { normalizeCountryName, getCountryFlag } from "@/lib/country-utils";
+import { normalizeCountry, getCountryFlag } from "@/lib/country-utils";
 
 // GET - Fetch messages with stats, filtering, and pagination
 export async function GET(request: NextRequest) {
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
         const topCountries = countryStats
             .filter(c => c.country)
             .map(c => ({
-                country: normalizeCountryName(c.country!),
+                country: normalizeCountry(c.country!) || c.country!,
                 count: c._count.country,
             }))
             .slice(0, 3);
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
             distinct: ["country"],
             where: { country: { not: null } },
         });
-        const availableCountries = [...new Set(countriesRaw.map(c => normalizeCountryName(c.country!)))].sort();
+        const availableCountries = [...new Set(countriesRaw.map(c => normalizeCountry(c.country!) || c.country!))].sort();
 
         return NextResponse.json({
             success: true,

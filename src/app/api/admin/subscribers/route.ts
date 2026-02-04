@@ -58,13 +58,22 @@ export async function GET(request: NextRequest) {
             prisma.subscriber.count({ where: { isActive: false } }),
         ]);
 
-        // Get top 3 countries by subscriber count
+        // Get top 3 countries by subscriber count (based on mode)
+        const topCountriesMode = searchParams.get("topCountriesMode") || "total";
+
+        let topCountriesWhere: any = { country: { not: null } };
+        if (topCountriesMode === "eventFans") {
+            topCountriesWhere.receiveEventAlerts = true;
+            topCountriesWhere.isActive = true;
+        } else if (topCountriesMode === "unsubscribed") {
+            topCountriesWhere.isActive = false;
+        } else {
+            // "total" - all subscribers
+        }
+
         const topCountriesRaw = await prisma.subscriber.groupBy({
             by: ["country"],
-            where: {
-                country: { not: null },
-                isActive: true,
-            },
+            where: topCountriesWhere,
             _count: { country: true },
             orderBy: { _count: { country: "desc" } },
             take: 3,

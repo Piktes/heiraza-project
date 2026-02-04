@@ -102,15 +102,18 @@ export function YouTubeCarousel({
     return null;
   }
 
-  // If less than 4 videos, show grid instead of carousel
+  // For 2-3 videos: Show mobile carousel with loop + desktop grid
+  // For 1 video: Just show single video (no carousel needed)
   if (validVideos.length <= 3) {
     return (
       <section id="videos" className={`section-padding px-6 ${className}`}>
         <div className="max-w-6xl mx-auto">
           <SectionHeader />
-          <div className={`grid gap-6 ${validVideos.length === 1 ? "max-w-2xl mx-auto" :
-            validVideos.length === 2 ? "grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto" :
-              "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+
+          {/* Desktop Grid - Hidden on mobile */}
+          <div className={`hidden md:grid gap-6 ${validVideos.length === 1 ? "max-w-2xl mx-auto" :
+            validVideos.length === 2 ? "grid-cols-2 max-w-4xl mx-auto" :
+              "grid-cols-2 lg:grid-cols-3"
             }`}>
             {validVideos.map((video, index) => (
               <VideoFacade
@@ -122,6 +125,16 @@ export function YouTubeCarousel({
                 index={index}
               />
             ))}
+          </div>
+
+          {/* Mobile Carousel with Loop - Visible only on mobile */}
+          <div className="md:hidden">
+            <MobileVideoCarousel
+              videos={validVideos}
+              playingVideoId={playingVideoId}
+              onPlay={handlePlayVideo}
+              onClose={handleCloseVideo}
+            />
           </div>
         </div>
       </section>
@@ -342,6 +355,99 @@ function VideoFacade({ video, isPlaying, onPlay, onClose, index = 0 }: VideoFaca
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ========================================
+// MOBILE VIDEO CAROUSEL (for ≤3 videos with loop)
+// ========================================
+interface MobileVideoCarouselProps {
+  videos: Video[];
+  playingVideoId: number | null;
+  onPlay: (videoId: number) => void;
+  onClose: () => void;
+}
+
+function MobileVideoCarousel({ videos, playingVideoId, onPlay, onClose }: MobileVideoCarouselProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const nextVideo = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % videos.length);
+  }, [videos.length]);
+
+  const prevVideo = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + videos.length) % videos.length);
+  }, [videos.length]);
+
+  // Auto-advance every 5 seconds for mobile loop (only if video not playing)
+  useEffect(() => {
+    if (videos.length <= 1) return;
+    if (playingVideoId !== null) return; // Pause auto-scroll when video is playing
+
+    const interval = setInterval(nextVideo, 5000);
+    return () => clearInterval(interval);
+  }, [videos.length, nextVideo, playingVideoId]);
+
+  if (videos.length === 0) return null;
+
+  // For single video, just show it without navigation
+  if (videos.length === 1) {
+    return (
+      <VideoFacade
+        video={videos[0]}
+        isPlaying={playingVideoId === videos[0].id}
+        onPlay={() => onPlay(videos[0].id)}
+        onClose={onClose}
+        index={0}
+      />
+    );
+  }
+
+  return (
+    <div className="relative">
+      {/* Current Video */}
+      <VideoFacade
+        video={videos[currentIndex]}
+        isPlaying={playingVideoId === videos[currentIndex].id}
+        onPlay={() => onPlay(videos[currentIndex].id)}
+        onClose={onClose}
+        index={currentIndex}
+      />
+
+      {/* Navigation */}
+      <div className="flex justify-center items-center gap-4 mt-4">
+        <button
+          onClick={prevVideo}
+          className="w-10 h-10 rounded-full glass flex items-center justify-center"
+          aria-label="Previous video"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {/* Dots Indicator */}
+        <div className="flex items-center gap-2">
+          {videos.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              className={`w-2 h-2 rounded-full transition-all ${idx === currentIndex
+                ? "bg-accent-coral w-4"
+                : "bg-foreground/30 hover:bg-foreground/50"
+                }`}
+              aria-label={`View video ${idx + 1}`}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={nextVideo}
+          className="w-10 h-10 rounded-full glass flex items-center justify-center"
+          aria-label="Next video"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
     </div>
   );

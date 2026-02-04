@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
             distinct: ["country"],
             where: { country: { not: null } },
         });
-        const availableCountries = [...new Set(countriesRaw.map(c => normalizeCountry(c.country!) || c.country!))].sort();
+        const availableCountries = Array.from(new Set(countriesRaw.map(c => normalizeCountry(c.country!) || c.country!))).sort();
 
         return NextResponse.json({
             success: true,

@@ -1,44 +1,67 @@
+"use server";
+
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { sendReply } from "@/lib/email";
+import { sendMessageReply, getEmailSignature, isValidEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
     try {
-        const { to, subject, body } = await request.json();
+        const { messageId, to, subject, body } = await request.json();
 
-        if (!to || !subject || !body) {
+        if (!messageId || !to || !subject || !body) {
             return NextResponse.json(
                 { success: false, error: "Missing required fields" },
                 { status: 400 }
             );
         }
 
-        // Get saved signature
-        const sig = await prisma.emailSignature.findFirst({ orderBy: { updatedAt: "desc" } });
-        let signature = null;
+        // Check email validity first
+        const emailValid = isValidEmail(to);
 
-        if (sig) {
-            let html = "";
-            if (sig.logoUrl) {
-                html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px;" />`;
-            }
-            html += sig.content;
-            signature = html;
-        }
-
-        // Send the reply
-        const result = await sendReply(to, subject, body, signature);
+        // Send the reply (updates database internally)
+        const result = await sendMessageReply(messageId, to, subject, body);
 
         if (result.success) {
-            return NextResponse.json({ success: true });
+            return NextResponse.json({
+                success: true,
+                emailValid,
+                message: "Email was sent successfully"
+            });
         } else {
             return NextResponse.json(
-                { success: false, error: result.error },
+                {
+                    success: false,
+                    error: result.error,
+                    emailValid,
+                    message: "Email could not be sent"
+                },
                 { status: 500 }
             );
         }
     } catch (error) {
         console.error("Send reply API error:", error);
+        return NextResponse.json(
+            { success: false, error: "Internal server error" },
+            { status: 500 }
+        );
+    }
+}
+
+// GET endpoint to check email validity and get signature for preview
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const email = searchParams.get("email");
+
+        const signature = await getEmailSignature();
+        const emailValid = email ? isValidEmail(email) : true;
+
+        return NextResponse.json({
+            success: true,
+            signature,
+            emailValid,
+        });
+    } catch (error) {
+        console.error("Get signature error:", error);
         return NextResponse.json(
             { success: false, error: "Internal server error" },
             { status: 500 }

@@ -278,16 +278,21 @@ model Subscriber {
 // MESSAGES (Contact Form)
 // ========================================
 model Message {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(255)
-  email       String   @db.VarChar(255)
-  message     String   @db.Text
-  ipAddress   String?  @db.VarChar(45)
-  country     String?  @db.VarChar(100)
-  city        String?  @db.VarChar(100)
-  countryCode String?  @db.VarChar(5)
-  createdAt   DateTime @default(now())
-  isRead      Boolean  @default(false)
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  email       String    @db.VarChar(255)
+  message     String    @db.Text
+  ipAddress   String?   @db.VarChar(45)
+  country     String?   @db.VarChar(100)
+  city        String?   @db.VarChar(100)
+  countryCode String?   @db.VarChar(5)
+  createdAt   DateTime  @default(now())
+  isRead      Boolean   @default(false)
+  
+  // Reply tracking
+  replied     Boolean   @default(false)
+  replyText   String?   @db.Text
+  repliedAt   DateTime?
   
   @@index([ipAddress])
 }

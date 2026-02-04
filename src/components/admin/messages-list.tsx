@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Reply, Calendar, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Reply, Calendar, Eye, EyeOff, Trash2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { ReplyModal } from "./reply-modal";
+import { getCountryFlag } from "@/lib/country-utils";
 
 interface Message {
     id: number;
@@ -14,59 +15,45 @@ interface Message {
     countryCode: string | null;
     createdAt: Date;
     isRead: boolean;
+    replied: boolean;
+    replyText: string | null;
+    repliedAt: Date | null;
 }
 
 interface MessagesListProps {
     messages: Message[];
-    signature: string | null;
     toggleReadAction: (formData: FormData) => Promise<void>;
     deleteAction: (formData: FormData) => Promise<void>;
-}
-
-// Convert country code to flag emoji (e.g., "TR" -> 🇹🇷)
-function countryCodeToFlag(countryCode: string | null | undefined): string {
-    if (!countryCode || countryCode.length !== 2) return "";
-    const codePoints = countryCode
-        .toUpperCase()
-        .split("")
-        .map((char) => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
+    onRefresh: () => void;
 }
 
 export function MessagesList({
     messages,
-    signature,
     toggleReadAction,
     deleteAction,
+    onRefresh,
 }: MessagesListProps) {
     const [replyModalOpen, setReplyModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+    const [expandedReplies, setExpandedReplies] = useState<Set<number>>(new Set());
 
     const openReplyModal = (msg: Message) => {
         setSelectedMessage(msg);
         setReplyModalOpen(true);
     };
 
-    const handleSendReply = async (subject: string, body: string): Promise<boolean> => {
-        if (!selectedMessage) return false;
-
-        try {
-            const response = await fetch("/api/admin/send-reply", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    to: selectedMessage.email,
-                    subject,
-                    body,
-                }),
-            });
-
-            const data = await response.json();
-            return data.success;
-        } catch (error) {
-            console.error("Failed to send reply:", error);
-            return false;
+    const toggleReplyExpand = (id: number) => {
+        const newExpanded = new Set(expandedReplies);
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id);
+        } else {
+            newExpanded.add(id);
         }
+        setExpandedReplies(newExpanded);
+    };
+
+    const handleSendSuccess = () => {
+        onRefresh();
     };
 
     return (
@@ -75,52 +62,84 @@ export function MessagesList({
                 {messages.map((msg) => (
                     <div
                         key={msg.id}
-                        className={`glass-card p-6 transition-all ${msg.isRead
-                                ? "opacity-80"
-                                : "border-l-4 border-l-accent-coral"
+                        className={`glass-card p-4 sm:p-6 transition-all ${msg.isRead
+                            ? "opacity-80"
+                            : "border-l-4 border-l-accent-coral"
                             }`}
                     >
                         <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                                <div className="flex flex-wrap items-center gap-3 mb-2">
-                                    <span className="font-medium text-lg">{msg.name}</span>
-                                    <a href={`mailto:${msg.email}`} className="text-accent-coral hover:underline">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                                    <span className="font-medium text-base sm:text-lg truncate">{msg.name}</span>
+                                    <a href={`mailto:${msg.email}`} className="text-accent-coral hover:underline text-sm truncate">
                                         {msg.email}
                                     </a>
                                     {!msg.isRead && (
-                                        <span className="bg-accent-coral text-white text-xs px-2 py-0.5 rounded-full">
+                                        <span className="bg-accent-coral text-white text-xs px-2 py-0.5 rounded-full flex-shrink-0">
                                             New
+                                        </span>
+                                    )}
+                                    {msg.replied && (
+                                        <span className="bg-green-500/10 text-green-600 dark:text-green-400 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+                                            <Check size={12} />
+                                            Replied
                                         </span>
                                     )}
                                 </div>
 
-                                <p className="text-foreground mb-3">{msg.message}</p>
+                                <p className="text-foreground mb-3 text-sm sm:text-base">{msg.message}</p>
 
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                {/* Reply Preview (if replied) */}
+                                {msg.replied && msg.replyText && (
+                                    <div className="mt-3 p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                                        <button
+                                            onClick={() => toggleReplyExpand(msg.id)}
+                                            className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 hover:underline w-full"
+                                        >
+                                            <Check size={14} />
+                                            <span>Your reply</span>
+                                            <span className="text-xs text-muted-foreground ml-1">
+                                                ({new Date(msg.repliedAt!).toLocaleDateString()})
+                                            </span>
+                                            <span className="ml-auto">
+                                                {expandedReplies.has(msg.id) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                            </span>
+                                        </button>
+                                        {expandedReplies.has(msg.id) && (
+                                            <div
+                                                className="mt-2 pt-2 border-t border-green-500/20 text-sm prose prose-sm dark:prose-invert max-w-none"
+                                                dangerouslySetInnerHTML={{ __html: msg.replyText }}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-3">
                                     <span className="flex items-center gap-1">
                                         <Calendar size={14} />
                                         {new Date(msg.createdAt).toLocaleString()}
                                     </span>
                                     {(msg.country || msg.city) && (
                                         <span className="flex items-center gap-1.5">
-                                            {msg.countryCode && (
-                                                <span className="text-lg">{countryCodeToFlag(msg.countryCode)}</span>
-                                            )}
+                                            <span className="text-lg">{getCountryFlag(msg.country)}</span>
                                             <span>{[msg.country, msg.city].filter(Boolean).join(", ")}</span>
                                         </span>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                 {/* Reply Button */}
                                 <button
                                     type="button"
                                     onClick={() => openReplyModal(msg)}
-                                    className="p-2 rounded-lg hover:bg-accent-coral/10 transition-colors"
-                                    title="Reply to message"
+                                    className={`p-2 rounded-lg transition-colors ${msg.replied
+                                            ? "hover:bg-green-500/10 text-green-500"
+                                            : "hover:bg-accent-coral/10 text-accent-coral"
+                                        }`}
+                                    title={msg.replied ? "Reply again" : "Reply to message"}
                                 >
-                                    <Reply size={18} className="text-accent-coral" />
+                                    <Reply size={18} />
                                 </button>
 
                                 {/* Toggle Read */}
@@ -162,11 +181,11 @@ export function MessagesList({
                 <ReplyModal
                     isOpen={replyModalOpen}
                     onClose={() => setReplyModalOpen(false)}
+                    messageId={selectedMessage.id}
                     recipientEmail={selectedMessage.email}
                     recipientName={selectedMessage.name}
                     originalMessage={selectedMessage.message}
-                    signature={signature}
-                    onSend={handleSendReply}
+                    onSendSuccess={handleSendSuccess}
                 />
             )}
         </>

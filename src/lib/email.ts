@@ -4,13 +4,29 @@ import prisma from "@/lib/prisma";
 // ========================================
 // EMAIL CONFIGURATION
 // ========================================
-const transporter = nodemailer.createTransport({
+
+// Gmail transporter - for event notifications
+const gmailTransporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
         user: process.env.GMAIL_USER || process.env.EMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASSWORD,
     },
 });
+
+// Custom SMTP transporter - for message replies
+const smtpTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "mail.test.heiraza.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: false, // TLS
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+    },
+});
+
+// Default transporter (Gmail for backwards compatibility)
+const transporter = gmailTransporter;
 
 // ========================================
 // VARIABLE REPLACEMENT
@@ -274,8 +290,81 @@ export async function sendTestEmail(
 }
 
 // ========================================
-// SEND REPLY TO MESSAGE (with signature)
+// SEND REPLY TO MESSAGE (with custom SMTP)
 // ========================================
+const DEFAULT_SIGNATURE = `
+<div style="font-family: Arial, sans-serif; color: #666;">
+    <p style="margin: 0;"><strong>Best regards,</strong></p>
+    <p style="margin: 5px 0 0 0;">Heiraza Team</p>
+    <p style="margin: 5px 0 0 0;"><a href="https://www.heiraza.com" style="color: #E8795E;">www.heiraza.com</a></p>
+</div>
+`;
+
+// Simple email validation regex
+function isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+export async function sendMessageReply(
+    messageId: number,
+    to: string,
+    subject: string,
+    body: string
+): Promise<{ success: boolean; error?: string; emailValid: boolean }> {
+    // Check email validity
+    const emailValid = isValidEmail(to);
+
+    try {
+        // Get signature from database or use default
+        const sig = await prisma.emailSignature.findFirst({ orderBy: { updatedAt: "desc" } });
+        let signature = DEFAULT_SIGNATURE;
+
+        if (sig) {
+            let html = "";
+            if (sig.logoUrl) {
+                html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px;" />`;
+            }
+            html += sig.content;
+            signature = html;
+        }
+
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                ${body}
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+                ${signature}
+            </div>
+        `;
+
+        // Use custom SMTP transporter for message replies
+        const smtpFrom = process.env.SMTP_FROM || "heiraza@test.heiraza.com";
+        await smtpTransporter.sendMail({
+            from: `"Heiraza" <${smtpFrom}>`,
+            to,
+            subject,
+            html: htmlContent,
+        });
+
+        // Update message in database to mark as replied
+        await prisma.message.update({
+            where: { id: messageId },
+            data: {
+                replied: true,
+                replyText: body,
+                repliedAt: new Date(),
+                isRead: true, // Also mark as read
+            },
+        });
+
+        return { success: true, emailValid };
+    } catch (error) {
+        console.error("sendMessageReply error:", error);
+        return { success: false, error: String(error), emailValid };
+    }
+}
+
+// Legacy function for backwards compatibility
 export async function sendReply(
     to: string,
     subject: string,
@@ -303,3 +392,21 @@ export async function sendReply(
         return { success: false, error: String(error) };
     }
 }
+
+// Helper to get signature for preview
+export async function getEmailSignature(): Promise<string> {
+    const sig = await prisma.emailSignature.findFirst({ orderBy: { updatedAt: "desc" } });
+
+    if (!sig) return DEFAULT_SIGNATURE;
+
+    let html = "";
+    if (sig.logoUrl) {
+        html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px;" />`;
+    }
+    html += sig.content;
+    return html;
+}
+
+// Validate email export
+export { isValidEmail };
+

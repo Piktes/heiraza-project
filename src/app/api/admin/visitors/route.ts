@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
+import { normalizeCountry } from "@/lib/country-utils";
 
 export async function GET(request: NextRequest) {
     const session = await getServerSession();
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get("country") || null; // Country filter
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
+    const engagementFilter = searchParams.get("engagement") || "all"; // all, subscribers, messaged
 
     try {
         // Calculate date range based on period
@@ -35,8 +37,14 @@ export async function GET(request: NextRequest) {
                 break;
         }
 
-        // Build country filter clause for raw queries
+        // Build additional filter clauses
         const countryFilter = country ? ` AND country = '${country.replace(/'/g, "''")}'` : "";
+        let engagementClause = "";
+        if (engagementFilter === "subscribers") {
+            engagementClause = " AND isSubscriber = 1";
+        } else if (engagementFilter === "messaged") {
+            engagementClause = " AND hasMessaged = 1";
+        }
 
         // Get visitors grouped by visitorHash with their engagement status
         const visitors = await prisma.$queryRawUnsafe<Array<{
@@ -57,22 +65,22 @@ export async function GET(request: NextRequest) {
                 MAX(isSubscriber) as isSubscriber,
                 MAX(hasMessaged) as hasMessaged
             FROM VisitorLog
-            WHERE visitedAt >= ? ${countryFilter}
+            WHERE visitedAt >= ? ${countryFilter} ${engagementClause}
             GROUP BY visitorHash, country, city
             ORDER BY lastVisit DESC
             LIMIT ?
             OFFSET ?
         `, startDate, limit, (page - 1) * limit);
 
-        // Get total unique visitors
+        // Get total unique visitors (with engagement filter)
         const totalResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(`
             SELECT COUNT(DISTINCT visitorHash) as count
             FROM VisitorLog
-            WHERE visitedAt >= ? ${countryFilter}
+            WHERE visitedAt >= ? ${countryFilter} ${engagementClause}
         `, startDate);
         const totalUniqueVisitors = Number(totalResult[0].count);
 
-        // Get total visits
+        // Get total visits (for all, not filtered by engagement)
         const totalVisitsResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(`
             SELECT COUNT(*) as count
             FROM VisitorLog
@@ -96,33 +104,51 @@ export async function GET(request: NextRequest) {
         `, startDate);
         const messagersCount = Number(messagersResult[0].count);
 
-        // Get top 3 countries by visitor count
-        const topCountries = await prisma.$queryRaw<Array<{
-            country: string;
-            visitorCount: bigint;
-        }>>`
+        // Get top 3 countries by visitor count (apply engagement filter)
+        let topCountriesQuery = `
             SELECT 
                 country,
                 COUNT(DISTINCT visitorHash) as visitorCount
             FROM VisitorLog
-            WHERE visitedAt >= ${startDate} AND country IS NOT NULL
+            WHERE visitedAt >= ? AND country IS NOT NULL ${engagementClause}
             GROUP BY country
             ORDER BY visitorCount DESC
             LIMIT 3
         `;
+        const topCountriesRaw = await prisma.$queryRawUnsafe<Array<{
+            country: string;
+            visitorCount: bigint;
+        }>>(topCountriesQuery, startDate);
 
-        // Get all available countries for filter dropdown
-        const availableCountries = await prisma.$queryRaw<Array<{ country: string }>>`
+        // Normalize and merge countries (e.g., Turkey + Türkiye = Türkiye)
+        const countryMap = new Map<string, number>();
+        for (const c of topCountriesRaw) {
+            const normalized = normalizeCountry(c.country) || c.country;
+            countryMap.set(normalized, (countryMap.get(normalized) || 0) + Number(c.visitorCount));
+        }
+        const topCountries = Array.from(countryMap.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([country, count]) => ({ country, count }));
+
+        // Get all available countries for filter dropdown (also normalized)
+        const availableCountriesRaw = await prisma.$queryRaw<Array<{ country: string }>>`
             SELECT DISTINCT country
             FROM VisitorLog
             WHERE visitedAt >= ${startDate} AND country IS NOT NULL
             ORDER BY country ASC
         `;
+        // Normalize and dedupe
+        const availableCountriesSet = new Set<string>();
+        for (const c of availableCountriesRaw) {
+            availableCountriesSet.add(normalizeCountry(c.country) || c.country);
+        }
+        const availableCountries = Array.from(availableCountriesSet).sort();
 
-        // Format visitors response
+        // Format visitors response (normalize countries)
         const visitorsWithEngagement = visitors.map(v => ({
             visitorHash: v.visitorHash?.substring(0, 12) + "...", // Show truncated hash for display
-            country: v.country,
+            country: normalizeCountry(v.country) || v.country,
             city: v.city,
             lastVisit: v.lastVisit,
             visitCount: Number(v.visitCount),
@@ -147,13 +173,11 @@ export async function GET(request: NextRequest) {
                     ? ((subscribersCount / totalUniqueVisitors) * 100).toFixed(1)
                     : "0.0",
             },
-            topCountries: topCountries.map(c => ({
-                country: c.country,
-                count: Number(c.visitorCount),
-            })),
-            availableCountries: availableCountries.map(c => c.country),
+            topCountries,
+            availableCountries,
             period,
             countryFilter: country,
+            engagementFilter,
         });
     } catch (error) {
         console.error("Error fetching visitors:", error);

@@ -1,5 +1,9 @@
 import nodemailer from "nodemailer";
 import prisma from "@/lib/prisma";
+import dns from "dns";
+import { promisify } from "util";
+
+const resolveMx = promisify(dns.resolveMx);
 
 // ========================================
 // EMAIL CONFIGURATION
@@ -361,14 +365,51 @@ function isValidEmail(email: string): boolean {
     return isKnownDomain || (hasValidFormat && hasValidTLD);
 }
 
+// Async DNS MX lookup to verify domain can receive emails
+async function verifyEmailDomain(email: string): Promise<{ valid: boolean; reason?: string }> {
+    if (!email) return { valid: false, reason: "Empty email" };
+
+    // Basic format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return { valid: false, reason: "Invalid format" };
+    }
+
+    const domain = email.split("@")[1]?.toLowerCase();
+    if (!domain) return { valid: false, reason: "No domain" };
+
+    // Check for obvious typos first
+    for (const typo of TYPO_PATTERNS) {
+        if (typo.pattern.test(domain)) {
+            return { valid: false, reason: `Typo detected - did you mean ${typo.correct}?` };
+        }
+    }
+
+    // DNS MX lookup
+    try {
+        const mxRecords = await resolveMx(domain);
+        if (mxRecords && mxRecords.length > 0) {
+            return { valid: true };
+        }
+        return { valid: false, reason: "Domain cannot receive emails" };
+    } catch (error: any) {
+        if (error.code === "ENOTFOUND" || error.code === "ENODATA") {
+            return { valid: false, reason: "Domain does not exist" };
+        }
+        // If DNS lookup fails for other reasons, assume valid to avoid false negatives
+        return { valid: true };
+    }
+}
+
 export async function sendMessageReply(
     messageId: number,
     to: string,
     subject: string,
     body: string
-): Promise<{ success: boolean; error?: string; emailValid: boolean }> {
-    // Check email validity
-    const emailValid = isValidEmail(to);
+): Promise<{ success: boolean; error?: string; emailValid: boolean; validationReason?: string }> {
+    // Check email validity using DNS MX lookup
+    const validation = await verifyEmailDomain(to);
+    const emailValid = validation.valid;
 
     try {
         // Get signature from database or use default
@@ -434,10 +475,10 @@ export async function sendMessageReply(
             },
         });
 
-        return { success: true, emailValid };
+        return { success: true, emailValid, validationReason: validation.reason };
     } catch (error) {
         console.error("sendMessageReply error:", error);
-        return { success: false, error: String(error), emailValid };
+        return { success: false, error: String(error), emailValid, validationReason: validation.reason };
     }
 }
 

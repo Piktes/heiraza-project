@@ -303,7 +303,7 @@ model Message {
 model EmailSignature {
   id        Int      @id @default(autoincrement())
   content   String   @db.Text
-  logoUrl   String?  @db.Text
+  logoUrl   String?  @db.LongText
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

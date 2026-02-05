@@ -4,6 +4,20 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { normalizeCountry } from "@/lib/country-utils";
 
+// Helper to strip HTML tags and convert to plain text
+function stripHtml(html: string): string {
+    return html
+        .replace(/<br\s*\/?>/gi, "\n")  // Convert <br> to newlines
+        .replace(/<\/p>/gi, "\n")        // Convert </p> to newlines
+        .replace(/<[^>]+>/g, "")         // Remove all HTML tags
+        .replace(/&nbsp;/g, " ")         // Replace &nbsp; with space
+        .replace(/&amp;/g, "&")          // Replace &amp; with &
+        .replace(/&lt;/g, "<")           // Replace &lt; with <
+        .replace(/&gt;/g, ">")           // Replace &gt; with >
+        .replace(/\n\s*\n/g, "\n")       // Remove multiple newlines
+        .trim();
+}
+
 // GET - Export messages data for PDF/Excel
 export async function GET(request: NextRequest) {
     try {
@@ -48,17 +62,22 @@ export async function GET(request: NextRequest) {
         }
 
         // Format data for export
-        const exportData = messages.map(m => ({
-            name: m.name,
-            email: m.email,
-            message: m.message.length > 100 ? m.message.substring(0, 100) + "..." : m.message,
-            country: normalizeCountry(m.country || "Unknown") || "Unknown",
-            city: m.city || "Unknown",
-            replied: m.replied ? "Yes" : "No",
-            replyText: m.replyText ? (m.replyText.length > 50 ? m.replyText.substring(0, 50) + "..." : m.replyText) : "-",
-            receivedAt: new Date(m.createdAt).toLocaleDateString(),
-            repliedAt: m.repliedAt ? new Date(m.repliedAt).toLocaleDateString() : "-",
-        }));
+        const exportData = messages.map(m => {
+            // Strip HTML from replyText for clean export
+            const plainReply = m.replyText ? stripHtml(m.replyText) : "";
+
+            return {
+                name: m.name,
+                email: m.email,
+                message: m.message.length > 100 ? m.message.substring(0, 100) + "..." : m.message,
+                country: normalizeCountry(m.country || "Unknown") || "Unknown",
+                city: m.city || "Unknown",
+                replied: m.replied ? "Yes" : "No",
+                replyText: plainReply ? (plainReply.length > 50 ? plainReply.substring(0, 50) + "..." : plainReply) : "-",
+                receivedAt: new Date(m.createdAt).toLocaleDateString(),
+                repliedAt: m.repliedAt ? new Date(m.repliedAt).toLocaleDateString() : "-",
+            };
+        });
 
         return NextResponse.json({
             success: true,

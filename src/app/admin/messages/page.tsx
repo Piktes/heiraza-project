@@ -146,6 +146,18 @@ export default function MessagesPage() {
 
             if (!result.success) throw new Error("Export failed");
 
+            // Helper to normalize Turkish characters for PDF
+            const normalizeText = (text: string) => {
+                if (!text) return text;
+                return text
+                    .replace(/ş/g, "s").replace(/Ş/g, "S")
+                    .replace(/ğ/g, "g").replace(/Ğ/g, "G")
+                    .replace(/ü/g, "u").replace(/Ü/g, "U")
+                    .replace(/ö/g, "o").replace(/Ö/g, "O")
+                    .replace(/ı/g, "i").replace(/İ/g, "I")
+                    .replace(/ç/g, "c").replace(/Ç/g, "C");
+            };
+
             const doc = new jsPDF();
             doc.setFontSize(18);
             doc.text("Messages Report", 14, 22);
@@ -156,17 +168,27 @@ export default function MessagesPage() {
 
             autoTable(doc, {
                 startY: 50,
-                head: [["Name", "Email", "Message", "Country", "Replied", "Date"]],
+                head: [["Name", "Email", "Message", "Country", "Replied", "Reply", "Date"]],
                 body: result.data.map((m: any) => [
-                    m.name,
+                    normalizeText(m.name),
                     m.email,
-                    m.message,
-                    m.country,
+                    normalizeText(m.message),
+                    normalizeText(m.country),
                     m.replied,
+                    normalizeText(m.replyText || "-"),
                     m.receivedAt,
                 ]),
-                styles: { fontSize: 8 },
+                styles: { fontSize: 7 },
                 headStyles: { fillColor: [232, 121, 94] },
+                columnStyles: {
+                    0: { cellWidth: 22 },  // Name
+                    1: { cellWidth: 35 },  // Email
+                    2: { cellWidth: 45 },  // Message
+                    3: { cellWidth: 18 },  // Country
+                    4: { cellWidth: 12 },  // Replied
+                    5: { cellWidth: 35 },  // Reply
+                    6: { cellWidth: 18 },  // Date
+                },
             });
 
             doc.save(`messages_${new Date().toISOString().split("T")[0]}.pdf`);

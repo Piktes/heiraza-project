@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Reply, Calendar, Eye, EyeOff, Trash2, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Reply, Calendar, Eye, EyeOff, Trash2, Check, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { ReplyModal } from "./reply-modal";
 import { getCountryFlag } from "@/lib/country-utils";
 
@@ -18,6 +18,7 @@ interface Message {
     replied: boolean;
     replyText: string | null;
     repliedAt: Date | null;
+    isSubscriber?: boolean;
 }
 
 interface MessagesListProps {
@@ -85,6 +86,12 @@ export function MessagesList({
                                             Replied
                                         </span>
                                     )}
+                                    {msg.isSubscriber && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex-shrink-0">
+                                            <Users size={12} />
+                                            Subscriber
+                                        </span>
+                                    )}
                                 </div>
 
                                 <p className="text-foreground mb-3 text-sm sm:text-base">{msg.message}</p>
@@ -134,8 +141,8 @@ export function MessagesList({
                                     type="button"
                                     onClick={() => openReplyModal(msg)}
                                     className={`p-2 rounded-lg transition-colors ${msg.replied
-                                            ? "hover:bg-green-500/10 text-green-500"
-                                            : "hover:bg-accent-coral/10 text-accent-coral"
+                                        ? "hover:bg-green-500/10 text-green-500"
+                                        : "hover:bg-accent-coral/10 text-accent-coral"
                                         }`}
                                     title={msg.replied ? "Reply again" : "Reply to message"}
                                 >

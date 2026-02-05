@@ -117,9 +117,15 @@ export async function GET(request: NextRequest) {
         });
         const availableCountries = Array.from(new Set(countriesRaw.map(c => normalizeCountry(c.country!) || c.country!))).sort();
 
+        // Add isSubscriber flag to each message
+        const messagesWithSubscriberFlag = messages.map(m => ({
+            ...m,
+            isSubscriber: subscriberEmailSet.has(m.email.toLowerCase()),
+        }));
+
         return NextResponse.json({
             success: true,
-            messages,
+            messages: messagesWithSubscriberFlag,
             pagination: {
                 page,
                 limit,

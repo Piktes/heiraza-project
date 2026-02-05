@@ -13,23 +13,29 @@ async function getSignature() {
 // Server action to save signature
 async function saveSignature(formData: FormData) {
     "use server";
-    const content = formData.get("content") as string;
-    const logoUrl = formData.get("logoUrl") as string | null;
 
-    const existing = await prisma.emailSignature.findFirst();
+    try {
+        const content = formData.get("content") as string || "";
+        const logoUrl = formData.get("logoUrl") as string | null;
 
-    if (existing) {
-        await prisma.emailSignature.update({
-            where: { id: existing.id },
-            data: { content, logoUrl: logoUrl || null },
-        });
-    } else {
-        await prisma.emailSignature.create({
-            data: { content, logoUrl: logoUrl || null },
-        });
+        const existing = await prisma.emailSignature.findFirst();
+
+        if (existing) {
+            await prisma.emailSignature.update({
+                where: { id: existing.id },
+                data: { content, logoUrl: logoUrl || null },
+            });
+        } else {
+            await prisma.emailSignature.create({
+                data: { content, logoUrl: logoUrl || null },
+            });
+        }
+
+        revalidatePath("/admin/email-signature");
+    } catch (error) {
+        console.error("Error saving signature:", error);
+        throw new Error("Failed to save signature");
     }
-
-    revalidatePath("/admin/email-signature");
 }
 
 export default async function EmailSignaturePage() {

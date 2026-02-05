@@ -300,10 +300,65 @@ const DEFAULT_SIGNATURE = `
 </div>
 `;
 
-// Simple email validation regex
+// Common valid email domains
+const VALID_EMAIL_DOMAINS = [
+    // Major providers
+    "gmail.com", "googlemail.com", "yahoo.com", "yahoo.co.uk", "yahoo.fr", "yahoo.de",
+    "hotmail.com", "hotmail.co.uk", "hotmail.fr", "hotmail.de", "hotmail.it",
+    "outlook.com", "outlook.co.uk", "live.com", "live.co.uk", "msn.com",
+    "icloud.com", "me.com", "mac.com", "aol.com", "protonmail.com", "proton.me",
+    "mail.com", "email.com", "zoho.com", "yandex.com", "yandex.ru",
+    // Country-specific
+    "gmx.de", "gmx.net", "web.de", "t-online.de", "freenet.de",
+    "orange.fr", "laposte.net", "free.fr", "sfr.fr", "wanadoo.fr",
+    "libero.it", "virgilio.it", "tin.it", "alice.it",
+    "mail.ru", "inbox.ru", "list.ru", "bk.ru",
+    "qq.com", "163.com", "126.com", "sina.com",
+    // Turkish providers
+    "ymail.com", "hotmail.com.tr", "outlook.com.tr",
+    // Business-like
+    "company.com", "work.com", "business.com",
+];
+
+// Common typo patterns to detect
+const TYPO_PATTERNS = [
+    { pattern: /g[öoó]tmail/i, correct: "gmail" },
+    { pattern: /gmai[^l]/i, correct: "gmail" },
+    { pattern: /gmial/i, correct: "gmail" },
+    { pattern: /gmaill/i, correct: "gmail" },
+    { pattern: /hotmai[^l]/i, correct: "hotmail" },
+    { pattern: /hotmal/i, correct: "hotmail" },
+    { pattern: /yahooo/i, correct: "yahoo" },
+    { pattern: /yaho[^o]/i, correct: "yahoo" },
+    { pattern: /outloo[^k]/i, correct: "outlook" },
+    { pattern: /outlok/i, correct: "outlook" },
+];
+
+// Enhanced email validation
 function isValidEmail(email: string): boolean {
+    if (!email) return false;
+
+    // Basic format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    if (!emailRegex.test(email)) return false;
+
+    const domain = email.split("@")[1]?.toLowerCase();
+    if (!domain) return false;
+
+    // Check for common typos
+    for (const typo of TYPO_PATTERNS) {
+        if (typo.pattern.test(domain)) {
+            return false; // Detected a typo
+        }
+    }
+
+    // Check if domain is in our known valid list OR looks like a valid custom domain
+    const isKnownDomain = VALID_EMAIL_DOMAINS.includes(domain);
+    const hasValidTLD = /\.[a-z]{2,}$/i.test(domain);
+    const hasValidFormat = /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/i.test(domain);
+
+    // Accept known domains OR properly formatted custom domains (for business emails)
+    return isKnownDomain || (hasValidFormat && hasValidTLD);
 }
 
 export async function sendMessageReply(

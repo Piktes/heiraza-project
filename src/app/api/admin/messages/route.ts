@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
 
         if (filter === "unanswered") {
             where.replied = false;
+        } else if (filter === "replied") {
+            where.replied = true;
         }
 
         // For "fromSubscribers" filter, we need to check if email exists in subscribers
@@ -77,9 +79,10 @@ export async function GET(request: NextRequest) {
         }
 
         // Get stats
-        const [totalMessages, unansweredCount, allSubscriberEmails] = await Promise.all([
+        const [totalMessages, unansweredCount, repliedCount, allSubscriberEmails] = await Promise.all([
             prisma.message.count(),
             prisma.message.count({ where: { replied: false } }),
+            prisma.message.count({ where: { replied: true } }),
             prisma.subscriber.findMany({ where: { isActive: true }, select: { email: true } }),
         ]);
 
@@ -135,6 +138,7 @@ export async function GET(request: NextRequest) {
             stats: {
                 total: totalMessages,
                 unanswered: unansweredCount,
+                replied: repliedCount,
                 fromSubscribers: fromSubscribersCount,
             },
             topCountries,

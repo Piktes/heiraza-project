@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
     MessageSquare, RefreshCw, Loader2, Search, Filter, Eye,
-    ChevronLeft, ChevronRight, Globe, Flag, Users, MailX,
+    ChevronLeft, ChevronRight, Globe, Flag, Users, MailX, MailCheck,
     FileText, FileSpreadsheet
 } from "lucide-react";
 import { InfoBar } from "@/components/admin/info-bar";
@@ -45,6 +45,7 @@ interface MessagesResponse {
     stats: {
         total: number;
         unanswered: number;
+        replied: number;
         fromSubscribers: number;
     };
     topCountries: TopCountry[];
@@ -52,7 +53,7 @@ interface MessagesResponse {
     filter: string;
 }
 
-type FilterType = "all" | "unanswered" | "fromSubscribers";
+type FilterType = "all" | "unanswered" | "replied" | "fromSubscribers";
 
 export default function MessagesPage() {
     const [data, setData] = useState<MessagesResponse | null>(null);
@@ -316,7 +317,7 @@ export default function MessagesPage() {
 
                 {/* Stats Cards - Clickable */}
                 {data?.stats && (
-                    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6">
                         {/* Total Messages */}
                         <button
                             onClick={() => { setFilter("all"); setPage(1); }}
@@ -370,6 +371,25 @@ export default function MessagesPage() {
                                 <div>
                                     <p className="text-xs sm:text-sm text-muted-foreground">Subscribers</p>
                                     <p className="text-lg sm:text-2xl font-display">{data.stats.fromSubscribers}</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Replied */}
+                        <button
+                            onClick={() => { setFilter("replied"); setPage(1); }}
+                            className={`glass-card p-3 sm:p-5 text-left transition-all ${filter === "replied"
+                                ? "ring-2 ring-blue-500 shadow-lg"
+                                : "hover:shadow-md"
+                                }`}
+                        >
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                <div className="p-2 sm:p-3 rounded-xl bg-blue-500/10 w-fit">
+                                    <MailCheck size={20} className="text-blue-500 sm:w-6 sm:h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Replied</p>
+                                    <p className="text-lg sm:text-2xl font-display">{data.stats.replied}</p>
                                 </div>
                             </div>
                         </button>

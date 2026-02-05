@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Save, Image as ImageIcon, Trash2, Eye, Upload } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Save, Image as ImageIcon, Trash2, Eye, Upload, CheckCircle, XCircle } from "lucide-react";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 interface SignatureEditorProps {
     initialContent: string;
@@ -18,7 +19,16 @@ export function SignatureEditor({
     const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
     const [isSaving, setIsSaving] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Auto-dismiss notification after 3 seconds
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => setNotification(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -35,6 +45,7 @@ export function SignatureEditor({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
+        setNotification(null);
 
         const formData = new FormData();
         formData.set("content", content);
@@ -42,6 +53,9 @@ export function SignatureEditor({
 
         try {
             await saveAction(formData);
+            setNotification({ type: "success", message: "Signature saved successfully!" });
+        } catch (error) {
+            setNotification({ type: "error", message: "Failed to save signature. Please try again." });
         } finally {
             setIsSaving(false);
         }
@@ -49,6 +63,23 @@ export function SignatureEditor({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Toast Notification */}
+            {notification && (
+                <div
+                    className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${notification.type === "success"
+                        ? "bg-green-500 text-white"
+                        : "bg-red-500 text-white"
+                        }`}
+                >
+                    {notification.type === "success" ? (
+                        <CheckCircle size={20} />
+                    ) : (
+                        <XCircle size={20} />
+                    )}
+                    <span className="font-medium">{notification.message}</span>
+                </div>
+            )}
+
             {/* Logo Upload */}
             <div className="glass-card p-6">
                 <h3 className="font-medium mb-4 flex items-center gap-2">
@@ -101,20 +132,14 @@ export function SignatureEditor({
 
             {/* Signature Content */}
             <div className="glass-card p-6">
-                <h3 className="font-medium mb-4">Signature Content (HTML)</h3>
-                <textarea
+                <h3 className="font-medium mb-4">Signature Content</h3>
+                <RichTextEditor
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={`<div style="font-family: Arial, sans-serif;">
-  <p><strong>Your Name</strong></p>
-  <p>Artist / Producer</p>
-  <p>Email: heiraza@heiraza.com</p>
-  <p>Website: https://heiraza.com</p>
-</div>`}
-                    className="input-field w-full min-h-[200px] font-mono text-sm"
+                    onChange={setContent}
+                    placeholder="Enter your signature content..."
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                    Use HTML for formatting. The logo (if uploaded) will be added above this content.
+                    Format your signature using the toolbar above. The logo (if uploaded) will be added above this content.
                 </p>
             </div>
 

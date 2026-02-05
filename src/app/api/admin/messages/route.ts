@@ -88,21 +88,25 @@ export async function GET(request: NextRequest) {
         const subscriberEmailSet = new Set(allSubscriberEmails.map(s => s.email.toLowerCase()));
         const fromSubscribersCount = allMessages.filter(m => subscriberEmailSet.has(m.email.toLowerCase())).length;
 
-        // Get top 3 countries
+        // Get top 3 countries - aggregate by normalized name
         const countryStats = await prisma.message.groupBy({
             by: ["country"],
             _count: { country: true },
-            orderBy: { _count: { country: "desc" } },
-            take: 5,
             where: { country: { not: null } },
         });
 
-        const topCountries = countryStats
-            .filter(c => c.country)
-            .map(c => ({
-                country: normalizeCountry(c.country!) || c.country!,
-                count: c._count.country,
-            }))
+        // Combine counts for same normalized country names
+        const countryMap = new Map<string, number>();
+        countryStats.forEach(c => {
+            if (c.country) {
+                const normalized = normalizeCountry(c.country) || c.country;
+                countryMap.set(normalized, (countryMap.get(normalized) || 0) + c._count.country);
+            }
+        });
+
+        const topCountries = Array.from(countryMap.entries())
+            .map(([country, count]) => ({ country, count }))
+            .sort((a, b) => b.count - a.count)
             .slice(0, 3);
 
         // Get available countries for filter

@@ -319,11 +319,32 @@ export async function sendMessageReply(
         // Get signature from database or use default
         const sig = await prisma.emailSignature.findFirst({ orderBy: { updatedAt: "desc" } });
         let signature = DEFAULT_SIGNATURE;
+        let attachments: { filename: string; content: Buffer; cid: string; contentType: string }[] = [];
 
         if (sig) {
             let html = "";
-            if (sig.logoUrl) {
-                html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px;" />`;
+            if (sig.logoUrl && sig.logoUrl.startsWith("data:")) {
+                // Extract base64 data and content type from data URL
+                const matches = sig.logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+                if (matches) {
+                    const contentType = matches[1];
+                    const base64Data = matches[2];
+                    const ext = contentType.split("/")[1] || "png";
+
+                    // Create CID attachment for the logo
+                    attachments.push({
+                        filename: `logo.${ext}`,
+                        content: Buffer.from(base64Data, "base64"),
+                        cid: "signature-logo",
+                        contentType,
+                    });
+
+                    // Use CID reference in HTML
+                    html += `<img src="cid:signature-logo" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px; display: block;" />`;
+                }
+            } else if (sig.logoUrl) {
+                // Regular URL - use directly
+                html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px; display: block;" />`;
             }
             html += sig.content;
             signature = html;
@@ -344,6 +365,7 @@ export async function sendMessageReply(
             to,
             subject,
             html: htmlContent,
+            attachments: attachments.length > 0 ? attachments : undefined,
         });
 
         // Update message in database to mark as replied

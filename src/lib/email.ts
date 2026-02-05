@@ -436,11 +436,11 @@ export async function sendMessageReply(
                     });
 
                     // Use CID reference in HTML
-                    html += `<img src="cid:signature-logo" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px; display: block;" />`;
+                    html += `<img src="cid:signature-logo" alt="Logo" style="max-width: 450px; max-height: 180px; object-fit: contain; margin-bottom: 15px; display: block;" />`;
                 }
             } else if (sig.logoUrl) {
                 // Regular URL - use directly
-                html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 150px; max-height: 60px; object-fit: contain; margin-bottom: 10px; display: block;" />`;
+                html += `<img src="${sig.logoUrl}" alt="Logo" style="max-width: 450px; max-height: 180px; object-fit: contain; margin-bottom: 15px; display: block;" />`;
             }
             html += sig.content;
             signature = html;

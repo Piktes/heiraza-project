@@ -3,6 +3,7 @@ import { Cinzel, Playfair_Display, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { VersionCheck } from "@/components/version-check";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 // Sharp/Runic font for brand name and headings
@@ -125,6 +126,7 @@ export default function RootLayout({
           >
             {children}
             <VersionCheck />
+            <Toaster position="top-right" richColors />
           </ThemeProvider>
         </AuthProvider>
       </body>

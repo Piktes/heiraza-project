@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Home, Music2, Youtube, Calendar, Package, ImageIcon,
-    Bell, Share2, MessageSquare, Mail, ImagePlus, Settings, PenTool, FileText, Users, ScrollText, Shield, Eye,
+    Bell, Share2, MessageSquare, Mail, ImagePlus, Settings, PenTool, FileText, Users, ScrollText, Shield, Eye, Newspaper,
 } from "lucide-react";
 import { openSection } from "./dashboard-section";
 
@@ -43,6 +43,7 @@ export function SidebarNav({ unreadCount, onLinkClick }: SidebarNavProps) {
         { href: "/admin/visitors", icon: Eye, label: "Visitors" },
         { href: "/admin/subscribers", icon: Users, label: "Subscribers" },
         { href: "/admin/messages", icon: MessageSquare, label: "Messages", badge: unreadCount > 0 ? unreadCount : undefined },
+        { href: "/admin/press-kit", icon: Newspaper, label: "Press Kit" },
         // System section with divider
         { href: "/admin/users", icon: Shield, label: "System Users", dividerBefore: true },
         { href: "/admin/logs", icon: ScrollText, label: "System Logs" },

@@ -154,6 +154,7 @@ export default async function Home() {
               {settings?.isShopVisible && products.length > 0 && <Link href="#shop" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Shop</Link>}
               <Link href="#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</Link>
               <Link href="#contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
+              <Link href="/press-kit" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Press Kit</Link>
             </div>
             <div className="flex items-center gap-2">
               <div className="scale-75 md:scale-100 origin-right">

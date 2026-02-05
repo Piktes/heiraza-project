@@ -38,6 +38,7 @@ export function MobileNav({ artistName = "Heiraza", showVideos = true, showShop 
         { href: "#shop", label: "Shop", show: showShop },
         { href: "#about", label: "About", show: true },
         { href: "#contact", label: "Contact", show: true },
+        { href: "/press-kit", label: "Press Kit", show: true },
     ].filter(link => link.show);
 
     return (

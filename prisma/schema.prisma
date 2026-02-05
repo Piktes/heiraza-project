@@ -324,3 +324,118 @@ model VisitorLog {
   @@index([visitorHash])
   @@index([visitedAt])
 }
+
+// ========================================
+// PRESS KIT: BIO (Singleton Config)
+// ========================================
+model PressKitBio {
+  id             Int      @id @default(autoincrement())
+  shortBio       String?  @db.Text
+  longBio        String?  @db.LongText    // Rich text
+  showShortBio   Boolean  @default(true)
+  showLongBio    Boolean  @default(true)
+  locale         String   @default("en") @db.VarChar(10)  // Future i18n
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ========================================
+// PRESS KIT: PHOTOS
+// ========================================
+model PressPhoto {
+  id               Int      @id @default(autoincrement())
+  imageUrl         String   @db.LongText
+  thumbnailUrl     String?  @db.LongText
+  altText          String   @db.VarChar(255)
+  photographerCredit String? @db.VarChar(255)
+  sortOrder        Int      @default(0)
+  isVisible        Boolean  @default(true)
+  isFeatured       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ========================================
+// PRESS KIT: MUSIC HIGHLIGHTS
+// ========================================
+model MusicHighlight {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(255)
+  platform     String   @db.VarChar(50)  // spotify, soundcloud, bandcamp, etc.
+  embedUrl     String   @db.VarChar(500)
+  sortOrder    Int      @default(0)
+  isVisible    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ========================================
+// PRESS KIT: VIDEOS
+// ========================================
+model PressKitVideo {
+  id             Int      @id @default(autoincrement())
+  title          String   @db.VarChar(255)
+  videoUrl       String   @db.VarChar(500)  // YouTube/Vimeo URL
+  thumbnailUrl   String?  @db.LongText      // Auto or uploaded
+  sortOrder      Int      @default(0)
+  isVisible      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ========================================
+// PRESS KIT: QUOTE CATEGORIES
+// ========================================
+model PressQuoteCategory {
+  id           Int          @id @default(autoincrement())
+  name         String       @db.VarChar(100)
+  sortOrder    Int          @default(0)
+  isVisible    Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  quotes       PressQuote[]
+}
+
+// ========================================
+// PRESS KIT: QUOTES
+// ========================================
+model PressQuote {
+  id           Int                @id @default(autoincrement())
+  quoteText    String             @db.Text
+  sourceName   String             @db.VarChar(255)
+  sourceUrl    String?            @db.VarChar(500)
+  categoryId   Int
+  category     PressQuoteCategory @relation(fields: [categoryId], references: [id])
+  sortOrder    Int                @default(0)
+  isVisible    Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([categoryId])
+}
+
+// ========================================
+// PRESS KIT: CONTACT/BOOKING INFO (Singleton)
+// ========================================
+model PressKitContact {
+  id             Int      @id @default(autoincrement())
+  bookingEmail   String?  @db.VarChar(255)
+  pressEmail     String?  @db.VarChar(255)
+  baseLocation   String?  @db.VarChar(255)
+  showBookingEmail Boolean @default(true)
+  showPressEmail   Boolean @default(true)
+  showBaseLocation Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ========================================
+// PRESS KIT: SETTINGS
+// ========================================
+model PressKitSettings {
+  id                    Int      @id @default(autoincrement())
+  allowPhotoDownload    Boolean  @default(true)
+  maxMusicTracks        Int      @default(5)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

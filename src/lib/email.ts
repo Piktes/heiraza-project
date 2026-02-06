@@ -302,7 +302,7 @@ export async function sendEventEmail(
 
                 // Build full email: Event Image + Content + Logo + Unsubscribe
                 const fullEmailHtml = `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="font-family: Georgia, Times, serif; max-width: 600px; margin: 0 auto;">
                         ${eventImageHtml}
                         ${htmlContent}
                         ${notificationLogoHtml}

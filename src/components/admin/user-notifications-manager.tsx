@@ -24,29 +24,30 @@ interface UserNotificationsManagerProps {
     onSave: (formData: FormData) => Promise<void>;
 }
 
-// Default templates with variables - BIGGER FONTS
-const DEFAULT_REMINDER = `<h2 style="font-size: 28px; margin-bottom: 16px;">🎵 Event Reminder: {{event_title}}</h2>
-<p style="font-size: 18px; line-height: 1.6;">Don't forget! You have an upcoming event in just <strong>1 week</strong>:</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>💰 Price:</strong> {{event_price}}</p>
-<p style="font-size: 18px; line-height: 1.6;">{{event_description}}</p>
-<p style="font-size: 18px;"><a href="{{ticket_link}}" style="color: #E8795E; font-weight: bold;">Get Your Tickets Now →</a></p>`;
+// Default templates with variables - BIGGER FONTS with email-safe fonts
+const DEFAULT_REMINDER = `<h2 style="font-family: Georgia, Times, serif; font-size: 28px; margin-bottom: 16px;">🎵 Event Reminder: {{event_title}}</h2>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">Don't forget! You have an upcoming event in just <strong>1 week</strong>:</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>💰 Price:</strong> {{event_price}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">{{event_description}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px;"><a href="{{ticket_link}}" style="color: #E8795E; font-weight: bold;">Get Your Tickets Now →</a></p>`;
 
-const DEFAULT_SOLDOUT = `<h2 style="font-size: 28px; margin-bottom: 16px;">⚠️ SOLD OUT: {{event_title}}</h2>
-<p style="font-size: 18px; line-height: 1.6;">We're sorry, but the following event is now <strong>sold out</strong>:</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
-<p style="font-size: 18px; line-height: 1.6;">Don't miss out on future events! Keep an eye on our website for new announcements.</p>`;
+const DEFAULT_SOLDOUT = `<h2 style="font-family: Georgia, Times, serif; font-size: 28px; margin-bottom: 16px;">⚠️ SOLD OUT: {{event_title}}</h2>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">We're sorry, but the following event is now <strong>sold out</strong>:</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">Don't miss out on future events! Keep an eye on our website for new announcements.</p>`;
 
-const DEFAULT_ANNOUNCEMENT = `<h2 style="font-size: 28px; margin-bottom: 16px;">🎉 New Event Announcement: {{event_title}}</h2>
-<p style="font-size: 18px; line-height: 1.6;">We're excited to announce a brand new event!</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
-<p style="font-size: 18px; line-height: 1.6;"><strong>💰 Price:</strong> {{event_price}}</p>
-<p style="font-size: 18px; line-height: 1.6;">{{event_description}}</p>
-<p style="font-size: 18px;"><a href="{{ticket_link}}" style="color: #E8795E; font-weight: bold;">Get Your Tickets Now →</a></p>
-<p style="font-size: 18px; line-height: 1.6;">See you there! 🎶</p>`;
+const DEFAULT_ANNOUNCEMENT = `<h2 style="font-family: Georgia, Times, serif; font-size: 28px; margin-bottom: 16px;">🎉 New Event Announcement: {{event_title}}</h2>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">We're excited to announce a brand new event!</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;"><strong>💰 Price:</strong> {{event_price}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">{{event_description}}</p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px;"><a href="{{ticket_link}}" style="color: #E8795E; font-weight: bold;">Get Your Tickets Now →</a></p>
+<p style="font-family: Georgia, Times, serif; font-size: 18px; line-height: 1.6;">See you there! 🎶</p>`;
+
 
 // Sample event data for preview
 const SAMPLE_EVENT = {

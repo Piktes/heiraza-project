@@ -85,16 +85,24 @@ const TEMPLATE_VARIABLES = [
     { key: "{{ticket_link}}", label: "Ticket Link" },
 ];
 
-// Font family options
+// Email-safe font family options (supported by Gmail, Outlook, Yahoo, etc.)
+// These fonts are universally supported across all major email clients
 const FONT_FAMILIES = [
-    { value: "Cinzel", label: "Cinzel (Display)" },
-    { value: "Playfair Display", label: "Playfair Display" },
-    { value: "Arial", label: "Arial" },
-    { value: "Georgia", label: "Georgia" },
-    { value: "Times New Roman", label: "Times New Roman" },
-    { value: "Verdana", label: "Verdana" },
-    { value: "Courier New", label: "Courier New" },
-    { value: "Trebuchet MS", label: "Trebuchet MS" },
+    // Sans-serif fonts
+    { value: "Arial, Helvetica, sans-serif", label: "Arial" },
+    { value: "Helvetica, Arial, sans-serif", label: "Helvetica" },
+    { value: "Verdana, Geneva, sans-serif", label: "Verdana" },
+    { value: "Tahoma, Geneva, sans-serif", label: "Tahoma" },
+    { value: "Trebuchet MS, sans-serif", label: "Trebuchet MS" },
+    { value: "Lucida Sans, sans-serif", label: "Lucida Sans" },
+    // Serif fonts
+    { value: "Georgia, Times, serif", label: "Georgia" },
+    { value: "Times New Roman, Times, serif", label: "Times New Roman" },
+    { value: "Palatino Linotype, Book Antiqua, serif", label: "Palatino" },
+    { value: "Garamond, serif", label: "Garamond" },
+    // Monospace fonts
+    { value: "Courier New, Courier, monospace", label: "Courier New" },
+    { value: "Lucida Console, Monaco, monospace", label: "Lucida Console" },
 ];
 
 // Font size options

@@ -230,6 +230,8 @@ model Event {
   isSoldOut    Boolean  @default(false)
   autoReminder Boolean  @default(true)
   autoSoldOut  Boolean  @default(true)
+  announcementSent   Boolean   @default(false)
+  announcementSentAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

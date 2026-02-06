@@ -39,6 +39,15 @@ export async function POST(request: NextRequest) {
             }, { status: 500 });
         }
 
+        // Mark event as announcement sent
+        await prisma.event.update({
+            where: { id: eventId },
+            data: {
+                announcementSent: true,
+                announcementSentAt: new Date(),
+            },
+        });
+
         return NextResponse.json({
             success: true,
             recipientCount: result.recipientCount,

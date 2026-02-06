@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { Calendar, MapPin, Ticket, Save, Loader2, Send, Mail } from "lucide-react";
+import { Calendar, MapPin, Ticket, Save, Loader2, Send, Mail, AlertTriangle } from "lucide-react";
 import { ImageUploadWithCrop } from "@/components/image-upload-with-crop";
 import { AnnouncementPreviewModal } from "@/components/admin/announcement-preview-modal";
 import { LocationAutocomplete } from "@/components/admin/location-autocomplete";
@@ -25,6 +25,8 @@ interface Event {
     isSoldOut: boolean;
     autoReminder: boolean;
     autoSoldOut: boolean;
+    announcementSent: boolean;
+    announcementSentAt: string | null;
 }
 
 export default function EditEventPage() {
@@ -236,6 +238,29 @@ export default function EditEventPage() {
                 {error && (
                     <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600">
                         {error}
+                    </div>
+                )}
+
+                {/* Announcement Already Sent Warning */}
+                {event.announcementSent && (
+                    <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-start gap-3">
+                        <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-medium">Announcement already sent</p>
+                            <p className="text-sm opacity-80">
+                                An announcement email for this event was sent on{" "}
+                                {event.announcementSentAt
+                                    ? new Date(event.announcementSentAt).toLocaleDateString("en-US", {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })
+                                    : "a previous date"}.
+                                Sending another announcement will notify subscribers again.
+                            </p>
+                        </div>
                     </div>
                 )}
 

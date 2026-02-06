@@ -134,15 +134,30 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
-      // Update event alerts preference if they're already subscribed
+      // Check if this is a re-subscribe (user was unsubscribed)
+      const wasInactive = !existing.isActive;
+
+      // Update subscriber - reactivate if needed and update event alerts preference
       await prisma.subscriber.update({
         where: { email: normalizedEmail },
-        data: { receiveEventAlerts },
+        data: {
+          receiveEventAlerts,
+          isActive: true, // Reactivate if they were unsubscribed
+          unsubscribeReason: wasInactive ? null : existing.unsubscribeReason, // Clear reason if reactivating
+        },
       });
-      return NextResponse.json(
-        { error: "already_subscribed", message: "You're already subscribed!" },
-        { status: 400 }
-      );
+
+      return NextResponse.json({
+        success: true,
+        updated: true,
+        reactivated: wasInactive,
+        eventAlertsEnabled: receiveEventAlerts,
+        message: wasInactive
+          ? "Welcome back! Your subscription has been reactivated."
+          : receiveEventAlerts
+            ? "Event notifications enabled!"
+            : "Your preferences have been updated."
+      });
     }
 
     // Fetch geolocation (non-blocking, fail silently)

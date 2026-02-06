@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
     Users, UserCheck, UserMinus, RefreshCw, Loader2, Search,
     Filter, ChevronLeft, ChevronRight, Globe, Flag, Trash2, Mail, Bell,
-    Download, FileText, FileSpreadsheet, MessageSquare
+    Download, FileText, FileSpreadsheet, MessageSquare, Calendar
 } from "lucide-react";
 import { InfoBar } from "@/components/admin/info-bar";
 import { jsPDF } from "jspdf";
@@ -121,6 +121,7 @@ export default function SubscribersPage() {
     const [deleting, setDeleting] = useState<number | null>(null);
     const [topCountriesMode, setTopCountriesMode] = useState<TopCountriesMode>("total");
     const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
+    const [timePeriod, setTimePeriod] = useState<string>("all");
     const limit = 30;
 
     const fetchSubscribers = useCallback(async () => {
@@ -136,6 +137,7 @@ export default function SubscribersPage() {
             });
             if (country) params.set("country", country);
             if (search) params.set("search", search);
+            if (timePeriod && timePeriod !== "all") params.set("period", timePeriod);
 
             const res = await fetch(`/api/admin/subscribers?${params}`);
             const result = await res.json();
@@ -148,7 +150,7 @@ export default function SubscribersPage() {
         } finally {
             setLoading(false);
         }
-    }, [country, status, search, page, topCountriesMode]);
+    }, [country, status, search, page, topCountriesMode, timePeriod]);
 
     useEffect(() => {
         fetchSubscribers();
@@ -215,7 +217,7 @@ export default function SubscribersPage() {
 
             autoTable(doc, {
                 startY: 50,
-                head: [["Email", "Country", "City", "Status", "Events", "Joined"]],
+                head: [["Email", "Country", "City", "Status", "Events", "Joined", "Unsub Date", "Reason"]],
                 body: result.data.map((s: any) => [
                     s.email,
                     s.country,
@@ -223,9 +225,15 @@ export default function SubscribersPage() {
                     s.status,
                     s.eventAlerts,
                     s.joinedAt,
+                    s.unsubscribedAt || "-",
+                    s.unsubscribeReason ? (s.unsubscribeReason.length > 20 ? s.unsubscribeReason.substring(0, 20) + "..." : s.unsubscribeReason) : "-",
                 ]),
-                styles: { fontSize: 8 },
+                styles: { fontSize: 7 },
                 headStyles: { fillColor: [232, 121, 94] },
+                columnStyles: {
+                    0: { cellWidth: 45 }, // Email
+                    7: { cellWidth: 30 }, // Reason
+                },
             });
 
             doc.save(`subscribers_${new Date().toISOString().split("T")[0]}.pdf`);
@@ -534,6 +542,30 @@ export default function SubscribersPage() {
                                 <Filter size={16} />
                                 Apply
                             </button>
+                        </div>
+
+                        {/* Time Period Filter */}
+                        <div className="flex items-center gap-1 mt-3 sm:mt-0 w-full sm:w-auto">
+                            <Calendar size={16} className="text-muted-foreground mr-1" />
+                            {[
+                                { value: "all", label: "All" },
+                                { value: "today", label: "Today" },
+                                { value: "week", label: "Week" },
+                                { value: "month", label: "Month" },
+                                { value: "year", label: "Year" },
+                            ].map((period) => (
+                                <button
+                                    key={period.value}
+                                    type="button"
+                                    onClick={() => { setTimePeriod(period.value); setPage(1); }}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${timePeriod === period.value
+                                            ? "bg-accent-coral text-white"
+                                            : "bg-muted hover:bg-muted/80"
+                                        }`}
+                                >
+                                    {period.label}
+                                </button>
+                            ))}
                         </div>
                     </form>
                 </div>

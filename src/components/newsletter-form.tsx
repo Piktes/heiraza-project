@@ -22,6 +22,7 @@ export function NewsletterForm({
     const [email, setEmail] = useState("");
     const [editableEmail, setEditableEmail] = useState("");
     const [receiveEventAlerts, setReceiveEventAlerts] = useState(false);
+    const [customSuccessMessage, setCustomSuccessMessage] = useState<string | null>(null);
 
     // Step 1: Open verification modal
     const handleInitialSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -56,23 +57,28 @@ export function NewsletterForm({
                     body: formData,
                 });
 
-                if (response.ok) {
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok && data.success) {
                     setShowVerification(false);
                     setShowSuccess(true);
                     setEmail("");
                     setEditableEmail("");
                     setReceiveEventAlerts(false);
-                } else {
-                    const data = await response.json().catch(() => ({}));
 
-                    if (data.error === "already_subscribed") {
-                        setError("You're already subscribed!");
-                    } else if (data.error === "invalid_email") {
+                    // Store custom message for updated/reactivated users
+                    if (data.updated && data.message) {
+                        setCustomSuccessMessage(data.message);
+                    } else {
+                        setCustomSuccessMessage(null);
+                    }
+                } else {
+                    if (data.error === "invalid_email") {
                         setError("Please enter a valid email address.");
                     } else if (data.error === "too_many_requests") {
                         setError("Too many requests. Please wait a moment.");
                     } else {
-                        setError("Failed to subscribe. Please try again.");
+                        setError(data.message || "Failed to subscribe. Please try again.");
                     }
                 }
             } catch {
@@ -253,10 +259,10 @@ export function NewsletterForm({
                         {/* Body Content */}
                         <div className="p-8 text-center">
                             <h3 className="font-display text-2xl md:text-3xl tracking-wide mb-4">
-                                {successTitle}
+                                {customSuccessMessage ? "Welcome Back!" : successTitle}
                             </h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                {successMessage}
+                                {customSuccessMessage || successMessage}
                             </p>
 
                             <button

@@ -40,6 +40,32 @@ export async function GET(request: NextRequest) {
             ];
         }
 
+        // Time period filter
+        const period = searchParams.get("period");
+        if (period && period !== "all") {
+            const now = new Date();
+            let startDate: Date;
+
+            switch (period) {
+                case "today":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case "week":
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case "month":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case "year":
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                default:
+                    startDate = new Date(0);
+            }
+
+            where.joinedAt = { gte: startDate };
+        }
+
         // Get paginated subscribers
         const subscribers = await prisma.subscriber.findMany({
             where,

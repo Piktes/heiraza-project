@@ -254,12 +254,21 @@ export async function sendEventEmail(
 
                 // Use custom SMTP transporter (same as message replies)
                 const smtpFrom = process.env.SMTP_FROM || "heiraza@heiraza.com";
+                const domain = smtpFrom.split("@")[1] || "heiraza.com";
+
+                // Generate unique Message-ID to prevent email threading
+                const uniqueMessageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${subscriber.id}@${domain}>`;
+
                 await smtpTransporter.sendMail({
                     from: `"Heiraza" <${smtpFrom}>`,
                     to: subscriber.email,
                     subject,
                     html: fullEmailHtml,
                     attachments: attachments.length > 0 ? attachments : undefined,
+                    messageId: uniqueMessageId,
+                    headers: {
+                        "X-Entity-Ref-ID": uniqueMessageId, // Prevents Gmail threading
+                    },
                 });
                 sentCount++;
                 console.log(`[EMAIL] Sent to ${subscriber.email}`);

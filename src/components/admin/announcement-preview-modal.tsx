@@ -24,6 +24,49 @@ interface AnnouncementPreviewModalProps {
     event: Event;
 }
 
+// Default announcement template (fallback)
+const DEFAULT_ANNOUNCEMENT = `<h2 style="font-size: 28px; margin-bottom: 16px;">🎉 New Event Announcement: {{event_title}}</h2>
+<p style="font-size: 18px; line-height: 1.6;">We're excited to announce a brand new event!</p>
+<p style="font-size: 18px; line-height: 1.6;"><strong>📅 Date:</strong> {{event_date}} at {{event_time}}</p>
+<p style="font-size: 18px; line-height: 1.6;"><strong>📍 Location:</strong> {{event_location}}</p>
+<p style="font-size: 18px; line-height: 1.6;"><strong>💰 Price:</strong> {{event_price}}</p>
+<p style="font-size: 18px; line-height: 1.6;">{{event_description}}</p>
+<p style="font-size: 18px;"><a href="{{ticket_link}}" style="color: #E8795E; font-weight: bold;">Get Your Tickets Now →</a></p>
+<p style="font-size: 18px; line-height: 1.6;">See you there! 🎶</p>`;
+
+// Replace template variables with actual event data
+function replaceVariables(template: string, event: Event): string {
+    const eventDate = new Date(event.date);
+
+    const variables: Record<string, string> = {
+        event_title: event.title,
+        event_date: eventDate.toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+        }),
+        event_time: eventDate.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+        }),
+        event_venue: event.venue,
+        event_city: event.city,
+        event_country: event.country,
+        event_location: `${event.venue}, ${event.city}, ${event.country}`,
+        event_price: event.price || "TBA",
+        event_description: event.description || "",
+        event_image_url: event.imageUrl || "",
+        ticket_link: event.ticketUrl || "#",
+    };
+
+    let result = template;
+    Object.entries(variables).forEach(([key, value]) => {
+        result = result.replace(new RegExp(`{{${key}}}`, "g"), value);
+    });
+    return result;
+}
+
 export function AnnouncementPreviewModal({
     isOpen,
     onClose,
@@ -35,24 +78,39 @@ export function AnnouncementPreviewModal({
     const [isLoading, setIsLoading] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [template, setTemplate] = useState<string>(DEFAULT_ANNOUNCEMENT);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
-    // Fetch subscriber count
+    // Fetch subscriber count and template
     useEffect(() => {
         if (isOpen) {
-            fetchSubscriberCount();
+            fetchData();
         }
     }, [isOpen]);
 
-    const fetchSubscriberCount = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch("/api/events/send-announcement");
-            if (res.ok) {
-                const data = await res.json();
+            // Fetch subscriber count
+            const countRes = await fetch("/api/events/send-announcement");
+            if (countRes.ok) {
+                const data = await countRes.json();
                 setSubscriberCount(data.subscriberCount);
             }
+
+            // Fetch template from site settings
+            const settingsRes = await fetch("/api/admin/site-settings");
+            if (settingsRes.ok) {
+                const settings = await settingsRes.json();
+                if (settings.announcementTemplate) {
+                    setTemplate(settings.announcementTemplate);
+                }
+                if (settings.notificationLogoUrl) {
+                    setLogoUrl(settings.notificationLogoUrl);
+                }
+            }
         } catch (err) {
-            console.error("Failed to fetch subscriber count:", err);
+            console.error("Failed to fetch data:", err);
             setSubscriberCount(0);
         } finally {
             setIsLoading(false);
@@ -82,28 +140,10 @@ export function AnnouncementPreviewModal({
         }
     };
 
-    // Format date for display
-    const formatDate = (dateStr: string) => {
-        try {
-            if (!dateStr) return "Date not set";
-            const date = new Date(dateStr);
-            // Check for invalid date
-            if (isNaN(date.getTime())) return dateStr;
-
-            return date.toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-            });
-        } catch (e) {
-            return dateStr;
-        }
-    };
-
     if (!isOpen) return null;
+
+    // Generate preview HTML with replaced variables
+    const previewHtml = replaceVariables(template, event);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -151,37 +191,43 @@ export function AnnouncementPreviewModal({
                         </div>
                     </div>
 
-                    {/* Event Preview */}
+                    {/* Event Preview - Now uses template */}
                     <div className="border border-border rounded-xl overflow-hidden">
                         <div className="bg-muted/50 px-4 py-2 text-sm font-medium text-muted-foreground">
                             Email Preview
                         </div>
-                        <div className="p-4 space-y-4">
+                        <div className="bg-white dark:bg-gray-900">
+                            {/* Event Image */}
                             {event.imageUrl && (
                                 <img
                                     src={event.imageUrl}
                                     alt={event.title}
-                                    className="w-full h-48 object-cover rounded-lg"
+                                    className="w-full h-48 object-cover"
                                 />
                             )}
-                            <div>
-                                <h3 className="font-display text-lg">{event.title}</h3>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    📅 {formatDate(event.date)}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    📍 {event.venue}, {event.city}, {event.country}
-                                </p>
-                                {event.price && (
-                                    <p className="text-sm font-medium text-accent-coral mt-2">
-                                        💰 {event.price}
-                                    </p>
-                                )}
-                                {event.description && (
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                        {event.description}
-                                    </p>
-                                )}
+
+                            {/* Template Content with replaced variables */}
+                            <div
+                                className="p-6 text-gray-900 dark:text-gray-100"
+                                style={{ fontFamily: "Arial, sans-serif" }}
+                                dangerouslySetInnerHTML={{ __html: previewHtml }}
+                            />
+
+                            {/* Notification Logo */}
+                            {logoUrl && (
+                                <div className="px-6 pb-4 text-center">
+                                    <img
+                                        src={logoUrl}
+                                        alt="Logo"
+                                        className="max-w-[300px] max-h-[120px] object-contain mx-auto"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Footer */}
+                            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400">
+                                <p>You're receiving this because you subscribed to event alerts.</p>
+                                <p><span className="underline">Unsubscribe</span> from future emails</p>
                             </div>
                         </div>
                     </div>

@@ -5,6 +5,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
+import FontFamily from "@tiptap/extension-font-family";
+import { TextStyle } from "@tiptap/extension-text-style";
 import {
     Bold,
     Italic,
@@ -20,6 +22,8 @@ import {
     Redo,
     Code,
     Variable,
+    Type,
+    ChevronDown,
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 
@@ -33,6 +37,28 @@ const TEMPLATE_VARIABLES = [
     { key: "{{event_description}}", label: "Description" },
     { key: "{{event_image_url}}", label: "Image URL" },
     { key: "{{ticket_link}}", label: "Ticket Link" },
+];
+
+// Font family options
+const FONT_FAMILIES = [
+    { value: "Arial", label: "Arial" },
+    { value: "Georgia", label: "Georgia" },
+    { value: "Times New Roman", label: "Times New Roman" },
+    { value: "Verdana", label: "Verdana" },
+    { value: "Courier New", label: "Courier New" },
+    { value: "Trebuchet MS", label: "Trebuchet MS" },
+];
+
+// Font size options
+const FONT_SIZES = [
+    { value: "12px", label: "12" },
+    { value: "14px", label: "14" },
+    { value: "16px", label: "16" },
+    { value: "18px", label: "18" },
+    { value: "20px", label: "20" },
+    { value: "24px", label: "24" },
+    { value: "28px", label: "28" },
+    { value: "32px", label: "32" },
 ];
 
 interface EmailTemplateEditorProps {
@@ -163,6 +189,48 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 
             <div className="w-px h-6 bg-border mx-1" />
 
+            {/* Font Family Dropdown */}
+            <select
+                value={editor.getAttributes("textStyle").fontFamily || ""}
+                onChange={(e) => {
+                    if (e.target.value) {
+                        editor.chain().focus().setFontFamily(e.target.value).run();
+                    } else {
+                        editor.chain().focus().unsetFontFamily().run();
+                    }
+                }}
+                className="h-8 px-2 text-sm bg-transparent border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground"
+                title="Font Family"
+            >
+                <option value="">Font</option>
+                {FONT_FAMILIES.map((font) => (
+                    <option key={font.value} value={font.value}>
+                        {font.label}
+                    </option>
+                ))}
+            </select>
+
+            {/* Font Size Dropdown */}
+            <select
+                value=""
+                onChange={(e) => {
+                    if (e.target.value) {
+                        editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run();
+                    }
+                }}
+                className="h-8 px-2 text-sm bg-transparent border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground w-16"
+                title="Font Size"
+            >
+                <option value="">Size</option>
+                {FONT_SIZES.map((size) => (
+                    <option key={size.value} value={size.value}>
+                        {size.label}
+                    </option>
+                ))}
+            </select>
+
+            <div className="w-px h-6 bg-border mx-1" />
+
             {/* Link */}
             <div className="relative">
                 <ToolbarButton
@@ -258,6 +326,8 @@ export function EmailTemplateEditor({
         immediatelyRender: false, // Fix SSR hydration mismatch
         extensions: [
             StarterKit,
+            TextStyle,
+            FontFamily,
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {

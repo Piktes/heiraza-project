@@ -92,21 +92,21 @@ function PreviewModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                     <div className="flex items-center gap-3">
                         <Eye className="text-accent-coral" size={20} />
-                        <h3 className="font-semibold text-gray-900">{title} Preview</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{title} Preview</h3>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-200 transition-colors">
-                        <X size={20} className="text-gray-600" />
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <X size={20} className="text-gray-600 dark:text-gray-400" />
                     </button>
                 </div>
 
                 {/* Email Preview */}
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
-                    <div className="max-w-lg mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-gray-800">
+                    <div className="max-w-lg mx-auto bg-white dark:bg-gray-850 rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: 'var(--card-bg, white)' }}>
                         {/* Sample Event Image */}
                         <div className="w-full h-48 bg-gradient-to-br from-accent-coral to-purple-600 flex items-center justify-center">
                             <span className="text-white text-lg font-medium">📸 Event Image</span>
@@ -114,8 +114,8 @@ function PreviewModal({
 
                         {/* Email Content */}
                         <div
-                            className="p-6"
-                            style={{ fontFamily: "Arial, sans-serif", color: "#333" }}
+                            className="p-6 text-gray-900 dark:text-gray-100"
+                            style={{ fontFamily: "Arial, sans-serif" }}
                             dangerouslySetInnerHTML={{ __html: previewHtml }}
                         />
 
@@ -131,9 +131,9 @@ function PreviewModal({
                         )}
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t text-center text-xs text-gray-500">
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400">
                             <p>You're receiving this because you subscribed to event alerts.</p>
-                            <p><a href="#" className="text-gray-500 underline">Unsubscribe</a> from future emails</p>
+                            <p><a href="#" className="text-gray-500 dark:text-gray-400 underline">Unsubscribe</a> from future emails</p>
                         </div>
                     </div>
                 </div>

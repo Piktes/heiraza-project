@@ -178,21 +178,82 @@ export async function sendEventEmail(
 
         // Get base URL for unsubscribe links and images
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://heiraza.com";
+        // Prepare CID attachments array for embedded images
+        let attachments: { filename: string; content: Buffer; cid: string; contentType: string }[] = [];
 
-        // Build event image HTML (at top)
+        // Build event image as CID attachment (like logo)
         let eventImageHtml = "";
         console.log(`[EMAIL] Event imageUrl: ${event.imageUrl || 'NOT SET'}`);
         if (event.imageUrl) {
-            const imageUrl = event.imageUrl.startsWith("http")
-                ? event.imageUrl
-                : `${baseUrl}${event.imageUrl}`;
-            console.log(`[EMAIL] Final image URL: ${imageUrl}`);
-            eventImageHtml = `<div style="margin-bottom: 20px;"><img src="${imageUrl}" alt="${event.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px;" /></div>`;
+            try {
+                // Handle both relative and absolute paths
+                let imagePath = event.imageUrl;
+
+                // If it's a relative URL, build the file path
+                if (!imagePath.startsWith("http") && !imagePath.startsWith("data:")) {
+                    // Remove leading slash if present
+                    const relativePath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+
+                    // Build absolute path to file
+                    const path = await import("path");
+                    const fs = await import("fs/promises");
+
+                    // Try to find the file in public folder
+                    const publicPath = path.join(process.cwd(), "public", relativePath);
+
+                    console.log(`[EMAIL] Trying to read event image from: ${publicPath}`);
+
+                    try {
+                        const imageBuffer = await fs.readFile(publicPath);
+                        const ext = path.extname(publicPath).slice(1) || "jpg";
+                        const mimeType = ext === "png" ? "image/png" : ext === "gif" ? "image/gif" : ext === "webp" ? "image/webp" : "image/jpeg";
+
+                        // Add event image as CID attachment
+                        attachments.push({
+                            filename: `event-image.${ext}`,
+                            content: imageBuffer,
+                            cid: "event-image",
+                            contentType: mimeType,
+                        });
+
+                        eventImageHtml = `<div style="margin-bottom: 20px;"><img src="cid:event-image" alt="${event.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px;" /></div>`;
+                        console.log(`[EMAIL] Event image embedded as CID attachment`);
+                    } catch (fileError) {
+                        console.error(`[EMAIL] Failed to read event image file:`, fileError);
+                        // Fallback to URL if file read fails
+                        const imageUrl = `${baseUrl}${event.imageUrl}`;
+                        eventImageHtml = `<div style="margin-bottom: 20px;"><img src="${imageUrl}" alt="${event.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px;" /></div>`;
+                    }
+                } else if (imagePath.startsWith("data:")) {
+                    // Handle base64 image
+                    const matches = imagePath.match(/^data:([^;]+);base64,(.+)$/);
+                    if (matches) {
+                        const contentType = matches[1];
+                        const base64Data = matches[2];
+                        const ext = contentType.split("/")[1] || "jpg";
+
+                        attachments.push({
+                            filename: `event-image.${ext}`,
+                            content: Buffer.from(base64Data, "base64"),
+                            cid: "event-image",
+                            contentType,
+                        });
+
+                        eventImageHtml = `<div style="margin-bottom: 20px;"><img src="cid:event-image" alt="${event.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px;" /></div>`;
+                        console.log(`[EMAIL] Event image (base64) embedded as CID attachment`);
+                    }
+                } else {
+                    // External URL - use as-is
+                    eventImageHtml = `<div style="margin-bottom: 20px;"><img src="${imagePath}" alt="${event.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px;" /></div>`;
+                    console.log(`[EMAIL] Event image using external URL`);
+                }
+            } catch (error) {
+                console.error(`[EMAIL] Error processing event image:`, error);
+            }
         }
 
         // Build notification logo HTML (at bottom, before unsubscribe) - 3x BIGGER
         let notificationLogoHtml = "";
-        let attachments: { filename: string; content: Buffer; cid: string; contentType: string }[] = [];
 
         if (settings.notificationLogoUrl) {
             console.log(`[EMAIL] Notification logo: SET`);

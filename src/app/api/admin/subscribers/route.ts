@@ -96,6 +96,30 @@ export async function GET(request: NextRequest) {
             .map((c) => c.country)
             .filter((c): c is string => c !== null);
 
+        // Get unsubscribe reason statistics
+        const unsubscribeReasons = await prisma.subscriber.findMany({
+            where: { isActive: false, unsubscribeReason: { not: null } },
+            select: { unsubscribeReason: true },
+        });
+
+        // Group and count reasons
+        const reasonCounts: Record<string, number> = {};
+        unsubscribeReasons.forEach((s) => {
+            if (s.unsubscribeReason) {
+                // Normalize reason - take the main part before any custom text
+                let reason = s.unsubscribeReason;
+                if (reason.startsWith("Other:")) {
+                    reason = "Other";
+                }
+                reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+            }
+        });
+
+        // Convert to array and sort by count
+        const unsubscribeReasonStats = Object.entries(reasonCounts)
+            .map(([reason, count]) => ({ reason, count }))
+            .sort((a, b) => b.count - a.count);
+
         return NextResponse.json({
             subscribers: subscribers.map((s) => ({
                 id: s.id,
@@ -124,6 +148,7 @@ export async function GET(request: NextRequest) {
             availableCountries,
             countryFilter: country,
             statusFilter: status,
+            unsubscribeReasonStats,
         });
     } catch (error) {
         console.error("Error fetching subscribers:", error);

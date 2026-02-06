@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
     Users, UserCheck, UserMinus, RefreshCw, Loader2, Search,
     Filter, ChevronLeft, ChevronRight, Globe, Flag, Trash2, Mail, Bell,
-    Download, FileText, FileSpreadsheet
+    Download, FileText, FileSpreadsheet, MessageSquare
 } from "lucide-react";
 import { InfoBar } from "@/components/admin/info-bar";
 import { jsPDF } from "jspdf";
@@ -83,6 +83,11 @@ interface TopCountry {
     count: number;
 }
 
+interface UnsubscribeReasonStat {
+    reason: string;
+    count: number;
+}
+
 interface SubscribersResponse {
     subscribers: Subscriber[];
     pagination: {
@@ -100,6 +105,7 @@ interface SubscribersResponse {
     availableCountries: string[];
     countryFilter: string | null;
     statusFilter: string;
+    unsubscribeReasonStats: UnsubscribeReasonStat[];
 }
 
 type TopCountriesMode = "total" | "eventFans" | "unsubscribed";
@@ -432,6 +438,47 @@ export default function SubscribersPage() {
                                     <p className="text-muted-foreground text-xs">{c.count}</p>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Unsubscribe Reasons Breakdown */}
+                {data?.unsubscribeReasonStats && data.unsubscribeReasonStats.length > 0 && (
+                    <div className="glass-card p-4 mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                            <MessageSquare size={16} className="text-red-500" />
+                            <span className="font-medium text-sm">
+                                Why Users Unsubscribe
+                                <span className="text-muted-foreground ml-2 text-xs">
+                                    ({data.stats.unsubscribed} total)
+                                </span>
+                            </span>
+                        </div>
+                        <div className="space-y-2">
+                            {data.unsubscribeReasonStats.slice(0, 5).map((item, idx) => {
+                                const percentage = data.stats.unsubscribed > 0
+                                    ? Math.round((item.count / data.stats.unsubscribed) * 100)
+                                    : 0;
+                                return (
+                                    <div key={item.reason} className="relative">
+                                        <div
+                                            className="absolute inset-0 rounded-lg bg-red-500/10"
+                                            style={{ width: `${percentage}%` }}
+                                        />
+                                        <div className="relative flex items-center justify-between p-2 rounded-lg">
+                                            <span className="text-sm truncate flex-1" title={item.reason}>
+                                                {item.reason === "Other" ? "📝 Other (custom)" : item.reason}
+                                            </span>
+                                            <div className="flex items-center gap-2 ml-2 text-sm">
+                                                <span className="text-muted-foreground">{item.count}</span>
+                                                <span className="text-xs text-red-500 font-medium w-10 text-right">
+                                                    {percentage}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}

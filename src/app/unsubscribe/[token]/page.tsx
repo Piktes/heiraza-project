@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Music2, AlertTriangle, CheckCircle } from "lucide-react";
+import { Music2, AlertTriangle, CheckCircle, HeartCrack } from "lucide-react";
 import { UnsubscribeForm } from "@/components/unsubscribe-form";
 
 export const metadata: Metadata = {
@@ -13,7 +13,6 @@ async function getSubscriber(token: string) {
     return prisma.subscriber.findFirst({
         where: {
             unsubscribeToken: token,
-            isActive: true,
         },
     });
 }
@@ -25,11 +24,15 @@ async function processUnsubscribe(formData: FormData) {
     const reason = formData.get("reason") as string;
 
     const subscriber = await prisma.subscriber.findFirst({
-        where: { unsubscribeToken: token, isActive: true },
+        where: { unsubscribeToken: token },
     });
 
     if (!subscriber) {
         return { success: false, error: "Invalid or expired unsubscribe link" };
+    }
+
+    if (!subscriber.isActive) {
+        return { success: false, error: "You have already unsubscribed" };
     }
 
     await prisma.subscriber.update({
@@ -61,8 +64,14 @@ export default async function UnsubscribePage({
                     <AlertTriangle className="mx-auto mb-4 text-yellow-500" size={48} />
                     <h1 className="font-display text-2xl mb-2">Invalid Link</h1>
                     <p className="text-muted-foreground">
-                        This unsubscribe link is invalid or has already been used.
+                        This unsubscribe link is invalid or has expired.
                     </p>
+                    <a
+                        href="/"
+                        className="inline-block mt-6 text-accent-coral hover:underline font-medium"
+                    >
+                        Go to HEIRAZA homepage
+                    </a>
                 </div>
             </div>
         );
@@ -75,9 +84,22 @@ export default async function UnsubscribePage({
                 <div className="glass-card p-8 max-w-md w-full text-center">
                     <CheckCircle className="mx-auto mb-4 text-green-500" size={48} />
                     <h1 className="font-display text-2xl mb-2">Already Unsubscribed</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mb-2">
                         You have already unsubscribed from our mailing list.
                     </p>
+                    {subscriber.unsubscribedAt && (
+                        <p className="text-xs text-muted-foreground">
+                            Unsubscribed on {new Date(subscriber.unsubscribedAt).toLocaleDateString()}
+                        </p>
+                    )}
+                    <div className="mt-6 p-4 rounded-xl bg-accent-coral/5 border border-accent-coral/10">
+                        <p className="text-sm text-muted-foreground">
+                            Changed your mind? Subscribe again at{" "}
+                            <a href="/" className="text-accent-coral hover:underline font-medium">
+                                heiraza.com
+                            </a>
+                        </p>
+                    </div>
                 </div>
             </div>
         );
@@ -85,13 +107,18 @@ export default async function UnsubscribePage({
 
     return (
         <div className="min-h-screen gradient-warm-bg grain flex items-center justify-center p-4">
-            <div className="glass-card p-8 max-w-lg w-full">
+            <div className="glass-card p-6 sm:p-8 max-w-lg w-full">
                 {/* Header */}
                 <div className="text-center mb-6">
-                    <Music2 className="mx-auto mb-3 text-accent-coral" size={40} />
-                    <h1 className="font-display text-2xl mb-2">Unsubscribe</h1>
+                    <div className="relative inline-block mb-4">
+                        <div className="absolute inset-0 bg-accent-coral/20 blur-2xl rounded-full" />
+                        <Music2 className="relative mx-auto text-accent-coral" size={48} />
+                    </div>
+                    <h1 className="font-display text-2xl sm:text-3xl mb-2">
+                        We&apos;ll Miss You
+                    </h1>
                     <p className="text-muted-foreground">
-                        We&#39;re sorry to see you go, <span className="font-medium text-foreground">{subscriber.email}</span>
+                        <span className="font-medium text-foreground">{subscriber.email}</span>
                     </p>
                 </div>
 

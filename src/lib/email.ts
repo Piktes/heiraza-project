@@ -181,18 +181,21 @@ export async function sendEventEmail(
 
         // Build event image HTML (at top)
         let eventImageHtml = "";
+        console.log(`[EMAIL] Event imageUrl: ${event.imageUrl || 'NOT SET'}`);
         if (event.imageUrl) {
             const imageUrl = event.imageUrl.startsWith("http")
                 ? event.imageUrl
                 : `${baseUrl}${event.imageUrl}`;
-            eventImageHtml = `<div style="margin-bottom: 20px;"><img src="${imageUrl}" alt="${event.title}" style="max-width: 100%; height: auto; border-radius: 8px;" /></div>`;
+            console.log(`[EMAIL] Final image URL: ${imageUrl}`);
+            eventImageHtml = `<div style="margin-bottom: 20px;"><img src="${imageUrl}" alt="${event.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px;" /></div>`;
         }
 
-        // Build notification logo HTML (at bottom, before unsubscribe)
+        // Build notification logo HTML (at bottom, before unsubscribe) - 3x BIGGER
         let notificationLogoHtml = "";
         let attachments: { filename: string; content: Buffer; cid: string; contentType: string }[] = [];
 
         if (settings.notificationLogoUrl) {
+            console.log(`[EMAIL] Notification logo: SET`);
             if (settings.notificationLogoUrl.startsWith("data:")) {
                 // Base64 logo - use CID attachment
                 const matches = settings.notificationLogoUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -208,12 +211,14 @@ export async function sendEventEmail(
                         contentType,
                     });
 
-                    notificationLogoHtml = `<div style="margin-top: 20px; text-align: center;"><img src="cid:notification-logo" alt="Heiraza" style="max-width: 200px; max-height: 80px; object-fit: contain;" /></div>`;
+                    notificationLogoHtml = `<div style="margin-top: 30px; text-align: center;"><img src="cid:notification-logo" alt="Heiraza" style="max-width: 600px; max-height: 240px; object-fit: contain;" /></div>`;
                 }
             } else {
                 // Regular URL
-                notificationLogoHtml = `<div style="margin-top: 20px; text-align: center;"><img src="${settings.notificationLogoUrl}" alt="Heiraza" style="max-width: 200px; max-height: 80px; object-fit: contain;" /></div>`;
+                notificationLogoHtml = `<div style="margin-top: 30px; text-align: center;"><img src="${settings.notificationLogoUrl}" alt="Heiraza" style="max-width: 600px; max-height: 240px; object-fit: contain;" /></div>`;
             }
+        } else {
+            console.log(`[EMAIL] Notification logo: NOT SET`);
         }
 
         // Send individual emails with personalized unsubscribe links

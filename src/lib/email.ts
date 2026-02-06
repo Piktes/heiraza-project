@@ -42,6 +42,7 @@ interface EventVariables {
     event_venue: string;
     event_city: string;
     event_country: string;
+    event_location: string; // Combined: venue, city, country
     event_price: string;
     event_description: string;
     event_image_url: string;
@@ -87,6 +88,7 @@ function formatEventVariables(event: {
         event_venue: event.venue,
         event_city: event.city,
         event_country: event.country,
+        event_location: `${event.venue}, ${event.city}, ${event.country}`,
         event_price: event.price || "TBA",
         event_description: event.description || "",
         event_image_url: event.imageUrl || "",
@@ -174,8 +176,45 @@ export async function sendEventEmail(
         const variables = formatEventVariables(event);
         const htmlContent = replaceVariables(template, variables);
 
-        // Get base URL for unsubscribe links
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+        // Get base URL for unsubscribe links and images
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://heiraza.com";
+
+        // Build event image HTML (at top)
+        let eventImageHtml = "";
+        if (event.imageUrl) {
+            const imageUrl = event.imageUrl.startsWith("http")
+                ? event.imageUrl
+                : `${baseUrl}${event.imageUrl}`;
+            eventImageHtml = `<div style="margin-bottom: 20px;"><img src="${imageUrl}" alt="${event.title}" style="max-width: 100%; height: auto; border-radius: 8px;" /></div>`;
+        }
+
+        // Build notification logo HTML (at bottom, before unsubscribe)
+        let notificationLogoHtml = "";
+        let attachments: { filename: string; content: Buffer; cid: string; contentType: string }[] = [];
+
+        if (settings.notificationLogoUrl) {
+            if (settings.notificationLogoUrl.startsWith("data:")) {
+                // Base64 logo - use CID attachment
+                const matches = settings.notificationLogoUrl.match(/^data:([^;]+);base64,(.+)$/);
+                if (matches) {
+                    const contentType = matches[1];
+                    const base64Data = matches[2];
+                    const ext = contentType.split("/")[1] || "png";
+
+                    attachments.push({
+                        filename: `notification-logo.${ext}`,
+                        content: Buffer.from(base64Data, "base64"),
+                        cid: "notification-logo",
+                        contentType,
+                    });
+
+                    notificationLogoHtml = `<div style="margin-top: 20px; text-align: center;"><img src="cid:notification-logo" alt="Heiraza" style="max-width: 200px; max-height: 80px; object-fit: contain;" /></div>`;
+                }
+            } else {
+                // Regular URL
+                notificationLogoHtml = `<div style="margin-top: 20px; text-align: center;"><img src="${settings.notificationLogoUrl}" alt="Heiraza" style="max-width: 200px; max-height: 80px; object-fit: contain;" /></div>`;
+            }
+        }
 
         // Send individual emails with personalized unsubscribe links
         let sentCount = 0;
@@ -195,12 +234,16 @@ export async function sendEventEmail(
                 // Create unsubscribe link
                 const unsubscribeLink = `${baseUrl}/unsubscribe/${token}`;
 
-                // Add unsubscribe footer to email
-                const emailWithFooter = `
-                    ${htmlContent}
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #888;">
-                        <p>You're receiving this because you subscribed to event alerts.</p>
-                        <p><a href="${unsubscribeLink}" style="color: #888;">Unsubscribe</a> from future emails</p>
+                // Build full email: Event Image + Content + Logo + Unsubscribe
+                const fullEmailHtml = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        ${eventImageHtml}
+                        ${htmlContent}
+                        ${notificationLogoHtml}
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #888;">
+                            <p>You're receiving this because you subscribed to event alerts.</p>
+                            <p><a href="${unsubscribeLink}" style="color: #888;">Unsubscribe</a> from future emails</p>
+                        </div>
                     </div>
                 `;
 
@@ -210,7 +253,8 @@ export async function sendEventEmail(
                     from: `"Heiraza" <${smtpFrom}>`,
                     to: subscriber.email,
                     subject,
-                    html: emailWithFooter,
+                    html: fullEmailHtml,
+                    attachments: attachments.length > 0 ? attachments : undefined,
                 });
                 sentCount++;
                 console.log(`[EMAIL] Sent to ${subscriber.email}`);

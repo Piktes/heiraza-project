@@ -114,9 +114,11 @@ function PreviewModal({
 
                         {/* Email Content */}
                         <div
-                            className="p-6 text-gray-900 dark:text-gray-100"
-                            style={{ fontFamily: "Arial, sans-serif" }}
-                            dangerouslySetInnerHTML={{ __html: previewHtml }}
+                            className="p-6 text-gray-900 dark:text-gray-100 email-preview-content"
+                            style={{
+                                fontFamily: "Arial, sans-serif",
+                            }}
+                            dangerouslySetInnerHTML={{ __html: `<style>.email-preview-content p { margin-bottom: 1em; min-height: 1.5em; } .email-preview-content p:empty { min-height: 1em; }</style>${previewHtml}` }}
                         />
 
                         {/* Logo */}

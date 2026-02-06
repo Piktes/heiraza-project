@@ -7,6 +7,52 @@ import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import FontFamily from "@tiptap/extension-font-family";
 import { TextStyle } from "@tiptap/extension-text-style";
+import { Extension } from "@tiptap/core";
+
+// Custom FontSize extension
+const FontSize = Extension.create({
+    name: "fontSize",
+    addOptions() {
+        return {
+            types: ["textStyle"],
+        };
+    },
+    addGlobalAttributes() {
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    fontSize: {
+                        default: null,
+                        parseHTML: (element) => element.style.fontSize?.replace(/['"]+/g, ""),
+                        renderHTML: (attributes) => {
+                            if (!attributes.fontSize) {
+                                return {};
+                            }
+                            return {
+                                style: `font-size: ${attributes.fontSize}`,
+                            };
+                        },
+                    },
+                },
+            },
+        ];
+    },
+    addCommands() {
+        return {
+            setFontSize:
+                (fontSize: string) =>
+                    ({ chain }: any) => {
+                        return chain().setMark("textStyle", { fontSize }).run();
+                    },
+            unsetFontSize:
+                () =>
+                    ({ chain }: any) => {
+                        return chain().setMark("textStyle", { fontSize: null }).removeEmptyTextStyle().run();
+                    },
+        };
+    },
+});
 import {
     Bold,
     Italic,
@@ -217,7 +263,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
                 value=""
                 onChange={(e) => {
                     if (e.target.value) {
-                        editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run();
+                        (editor.commands as any).setFontSize(e.target.value);
                     }
                 }}
                 className="h-8 px-2 text-sm bg-transparent border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground w-16"
@@ -330,6 +376,7 @@ export function EmailTemplateEditor({
             StarterKit,
             TextStyle,
             FontFamily,
+            FontSize,
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {

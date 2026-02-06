@@ -24,6 +24,7 @@ interface Event {
     isSoldOut: boolean;
     autoReminder: boolean;
     autoSoldOut: boolean;
+    announcementSent: boolean;
 }
 
 export default function EventsPage() {
@@ -313,6 +314,11 @@ function EventCard({
 
                 {/* Automation Badges */}
                 <div className="flex flex-wrap gap-2 mt-3">
+                    {event.announcementSent && (
+                        <span className="bg-green-500/10 text-green-600 text-xs px-2 py-0.5 rounded flex items-center gap-1">
+                            ✉️ Announced
+                        </span>
+                    )}
                     {event.autoReminder && (
                         <span className="bg-blue-500/10 text-blue-500 text-xs px-2 py-0.5 rounded">
                             Auto Reminder

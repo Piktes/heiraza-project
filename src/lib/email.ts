@@ -18,9 +18,9 @@ const gmailTransporter = nodemailer.createTransport({
     },
 });
 
-// Custom SMTP transporter - for message replies
+// Custom SMTP transporter - for ALL emails (event notifications + replies)
 const smtpTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "mail.test.heiraza.com",
+    host: process.env.SMTP_HOST || "mail.heiraza.com",
     port: parseInt(process.env.SMTP_PORT || "587"),
     secure: false, // TLS
     auth: {
@@ -29,8 +29,8 @@ const smtpTransporter = nodemailer.createTransport({
     },
 });
 
-// Default transporter (Gmail for backwards compatibility)
-const transporter = gmailTransporter;
+// Use SMTP for all emails
+const transporter = smtpTransporter;
 
 // ========================================
 // VARIABLE REPLACEMENT
@@ -118,9 +118,14 @@ export async function sendEventEmail(
     }
 ): Promise<{ success: boolean; recipientCount: number; error?: string }> {
     try {
+        console.log(`[EMAIL] sendEventEmail called with type: ${type}, event: ${event.title}`);
+        console.log(`[EMAIL] SMTP config - Host: ${process.env.SMTP_HOST || 'mail.heiraza.com'}, User: ${process.env.SMTP_USER || 'NOT SET'}`);
+        console.log(`[EMAIL] SMTP Password: ${process.env.SMTP_PASSWORD ? 'SET' : 'NOT SET'}`);
+
         // Get site settings for templates
         const settings = await prisma.siteSettings.findFirst();
         if (!settings) {
+            console.log("[EMAIL] Error: Site settings not found");
             return { success: false, recipientCount: 0, error: "Site settings not found" };
         }
 
@@ -143,7 +148,10 @@ export async function sendEventEmail(
                 break;
         }
 
+        console.log(`[EMAIL] Template for ${type}: ${template ? 'FOUND (' + template.length + ' chars)' : 'NOT SET'}`);
+
         if (!template) {
+            console.log(`[EMAIL] Error: No ${type} template configured`);
             return { success: false, recipientCount: 0, error: `No ${type} template configured` };
         }
 
@@ -155,7 +163,10 @@ export async function sendEventEmail(
             },
         });
 
+        console.log(`[EMAIL] Found ${subscribers.length} subscribers with event alerts enabled`);
+
         if (subscribers.length === 0) {
+            console.log("[EMAIL] No subscribers with event alerts enabled");
             return { success: true, recipientCount: 0 };
         }
 
@@ -193,13 +204,16 @@ export async function sendEventEmail(
                     </div>
                 `;
 
-                await transporter.sendMail({
-                    from: `"Heiraza" <${process.env.GMAIL_USER || process.env.EMAIL_USER}>`,
+                // Use custom SMTP transporter (same as message replies)
+                const smtpFrom = process.env.SMTP_FROM || "heiraza@heiraza.com";
+                await smtpTransporter.sendMail({
+                    from: `"Heiraza" <${smtpFrom}>`,
                     to: subscriber.email,
                     subject,
                     html: emailWithFooter,
                 });
                 sentCount++;
+                console.log(`[EMAIL] Sent to ${subscriber.email}`);
 
                 // Small delay to avoid rate limits
                 if (sentCount % 10 === 0) {
@@ -279,8 +293,10 @@ export async function sendTestEmail(
         const variables = formatEventVariables(event);
         const htmlContent = replaceVariables(template, variables);
 
-        await transporter.sendMail({
-            from: `"Heiraza" <${process.env.GMAIL_USER || process.env.EMAIL_USER}>`,
+        // Use custom SMTP transporter (same as message replies)
+        const smtpFrom = process.env.SMTP_FROM || "heiraza@heiraza.com";
+        await smtpTransporter.sendMail({
+            from: `"Heiraza" <${smtpFrom}>`,
             to,
             subject,
             html: htmlContent,

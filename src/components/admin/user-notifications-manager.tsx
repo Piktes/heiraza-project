@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import {
     Save,
     Loader2,
@@ -8,6 +8,9 @@ import {
     Clock,
     AlertTriangle,
     Megaphone,
+    Image as ImageIcon,
+    Upload,
+    Trash2,
 } from "lucide-react";
 import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
 
@@ -15,6 +18,7 @@ interface UserNotificationsManagerProps {
     reminderTemplate: string | null;
     soldOutTemplate: string | null;
     announcementTemplate: string | null;
+    notificationLogoUrl: string | null;
     onSave: (formData: FormData) => Promise<void>;
 }
 
@@ -46,10 +50,12 @@ export function UserNotificationsManager({
     reminderTemplate: initialReminder,
     soldOutTemplate: initialSoldOut,
     announcementTemplate: initialAnnouncement,
+    notificationLogoUrl: initialLogoUrl,
     onSave,
 }: UserNotificationsManagerProps) {
     const [isPending, startTransition] = useTransition();
     const [saved, setSaved] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [reminderTemplate, setReminderTemplate] = useState(
         initialReminder || DEFAULT_REMINDER
@@ -60,6 +66,19 @@ export function UserNotificationsManager({
     const [announcementTemplate, setAnnouncementTemplate] = useState(
         initialAnnouncement || DEFAULT_ANNOUNCEMENT
     );
+    const [logoUrl, setLogoUrl] = useState(initialLogoUrl || "");
+
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = () => {
+            setLogoUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleSave = () => {
         startTransition(async () => {
@@ -67,6 +86,7 @@ export function UserNotificationsManager({
             formData.set("reminderTemplate", reminderTemplate);
             formData.set("soldOutTemplate", soldOutTemplate);
             formData.set("announcementTemplate", announcementTemplate);
+            formData.set("notificationLogoUrl", logoUrl);
             await onSave(formData);
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
@@ -75,6 +95,60 @@ export function UserNotificationsManager({
 
     return (
         <div className="space-y-10">
+            {/* Logo Upload Section */}
+            <section className="glass-card p-8">
+                <div className="flex items-center gap-3 mb-2">
+                    <ImageIcon className="text-accent-coral" size={24} />
+                    <h2 className="font-display text-xl tracking-wide">
+                        Email Logo
+                    </h2>
+                </div>
+                <p className="text-muted-foreground text-sm mb-6">
+                    Upload a logo to be displayed at the top of <strong>all notification emails</strong>.
+                </p>
+
+                {logoUrl ? (
+                    <div className="flex items-start gap-4">
+                        <div className="w-48 h-24 rounded-lg border border-border overflow-hidden bg-white flex items-center justify-center">
+                            <img
+                                src={logoUrl}
+                                alt="Email logo"
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setLogoUrl("")}
+                            className="btn-ghost text-red-500 flex items-center gap-2"
+                        >
+                            <Trash2 size={16} />
+                            Remove
+                        </button>
+                    </div>
+                ) : (
+                    <div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="btn-secondary flex items-center gap-2"
+                        >
+                            <Upload size={16} />
+                            Upload Logo
+                        </button>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Recommended: PNG or SVG with transparent background
+                        </p>
+                    </div>
+                )}
+            </section>
+
             {/* Reminder Template */}
             <section className="glass-card p-8">
                 <div className="flex items-center gap-3 mb-2">
@@ -181,3 +255,4 @@ export function UserNotificationsManager({
         </div>
     );
 }
+

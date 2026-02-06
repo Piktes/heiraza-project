@@ -16,6 +16,7 @@ async function updateEmailTemplates(formData: FormData) {
     const reminderTemplate = formData.get("reminderTemplate") as string | null;
     const soldOutTemplate = formData.get("soldOutTemplate") as string | null;
     const announcementTemplate = formData.get("announcementTemplate") as string | null;
+    const notificationLogoUrl = formData.get("notificationLogoUrl") as string | null;
 
     const settings = await prisma.siteSettings.findFirst();
 
@@ -26,6 +27,7 @@ async function updateEmailTemplates(formData: FormData) {
                 reminderTemplate: reminderTemplate || null,
                 soldOutTemplate: soldOutTemplate || null,
                 announcementTemplate: announcementTemplate || null,
+                notificationLogoUrl: notificationLogoUrl || null,
             },
         });
     }
@@ -58,6 +60,7 @@ export default async function UserNotificationsPage() {
                     reminderTemplate={settings?.reminderTemplate || null}
                     soldOutTemplate={settings?.soldOutTemplate || null}
                     announcementTemplate={settings?.announcementTemplate || null}
+                    notificationLogoUrl={settings?.notificationLogoUrl || null}
                     onSave={updateEmailTemplates}
                 />
             </main>

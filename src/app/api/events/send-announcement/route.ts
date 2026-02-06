@@ -8,7 +8,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { eventId } = body;
 
+        console.log("[ANNOUNCEMENT] Received request for eventId:", eventId);
+
         if (!eventId) {
+            console.log("[ANNOUNCEMENT] Error: No eventId provided");
             return NextResponse.json({ error: "Event ID required" }, { status: 400 });
         }
 
@@ -18,13 +21,19 @@ export async function POST(request: NextRequest) {
         });
 
         if (!event) {
+            console.log("[ANNOUNCEMENT] Error: Event not found for id:", eventId);
             return NextResponse.json({ error: "Event not found" }, { status: 404 });
         }
+
+        console.log("[ANNOUNCEMENT] Found event:", event.title);
 
         // Send announcement email
         const result = await sendEventEmail("announcement", event);
 
+        console.log("[ANNOUNCEMENT] sendEventEmail result:", result);
+
         if (!result.success) {
+            console.log("[ANNOUNCEMENT] Error:", result.error);
             return NextResponse.json({
                 error: result.error || "Failed to send emails"
             }, { status: 500 });
@@ -36,7 +45,7 @@ export async function POST(request: NextRequest) {
             message: `Announcement sent to ${result.recipientCount} subscribers`,
         });
     } catch (error) {
-        console.error("Send announcement error:", error);
+        console.error("[ANNOUNCEMENT] Send announcement error:", error);
         return NextResponse.json({ error: "Failed to send announcement" }, { status: 500 });
     }
 }

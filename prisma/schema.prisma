@@ -89,6 +89,7 @@ model SiteSettings {
   reminderTemplate      String?  @db.LongText
   soldOutTemplate       String?  @db.LongText
   announcementTemplate  String?  @db.LongText
+  notificationLogoUrl   String?  @db.LongText  // Logo for notification emails
   
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

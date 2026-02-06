@@ -75,11 +75,20 @@ export default function NewEventPage() {
 
       // If sendEmail is true, trigger announcement
       if (sendEmail && eventData.id) {
-        await fetch("/api/events/send-announcement", {
+        const announcementRes = await fetch("/api/events/send-announcement", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ eventId: eventData.id }),
         });
+
+        const announcementData = await announcementRes.json();
+
+        if (!announcementRes.ok) {
+          console.error("Announcement failed:", announcementData);
+          throw new Error(announcementData.error || "Failed to send announcement emails");
+        }
+
+        console.log("Announcement sent successfully:", announcementData);
       }
 
       router.push("/admin/events");

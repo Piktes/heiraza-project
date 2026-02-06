@@ -166,6 +166,7 @@ export function UserNotificationsManager({
         initialAnnouncement || DEFAULT_ANNOUNCEMENT
     );
     const [logoUrl, setLogoUrl] = useState(initialLogoUrl || "");
+    const [showToast, setShowToast] = useState(false);
 
     // Preview modal states
     const [previewType, setPreviewType] = useState<"reminder" | "soldout" | "announcement" | null>(null);
@@ -190,7 +191,11 @@ export function UserNotificationsManager({
             formData.set("notificationLogoUrl", logoUrl);
             await onSave(formData);
             setSaved(true);
-            setTimeout(() => setSaved(false), 2000);
+            setShowToast(true);
+            setTimeout(() => {
+                setSaved(false);
+                setShowToast(false);
+            }, 3000);
         });
     };
 
@@ -347,32 +352,6 @@ export function UserNotificationsManager({
                 />
             </section>
 
-            {/* Variable Reference */}
-            <section className="glass-card p-6">
-                <h3 className="font-medium mb-3">Available Variables</h3>
-                <div className="flex flex-wrap gap-2">
-                    {[
-                        "{{event_title}}",
-                        "{{event_date}}",
-                        "{{event_time}}",
-                        "{{event_location}}",
-                        "{{event_price}}",
-                        "{{event_description}}",
-                        "{{ticket_link}}",
-                    ].map((v) => (
-                        <code
-                            key={v}
-                            className="px-2 py-1 text-sm bg-muted rounded text-accent-coral"
-                        >
-                            {v}
-                        </code>
-                    ))}
-                </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                    💡 Tip: Use inline styles for font sizes, e.g., <code className="px-1 bg-muted rounded">style="font-size: 20px;"</code>
-                </p>
-            </section>
-
             {/* Save Button */}
             <div className="flex justify-center pt-4">
                 <button
@@ -398,6 +377,16 @@ export function UserNotificationsManager({
                     )}
                 </button>
             </div>
+
+            {/* Success Toast */}
+            {showToast && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+                    <div className="flex items-center gap-3 px-6 py-4 bg-emerald-500/90 dark:bg-emerald-600/90 backdrop-blur-md text-white rounded-2xl shadow-lg shadow-emerald-500/20">
+                        <CheckCircle size={22} className="text-white" />
+                        <span className="font-medium">All templates saved successfully!</span>
+                    </div>
+                </div>
+            )}
 
             {/* Preview Modal */}
             <PreviewModal

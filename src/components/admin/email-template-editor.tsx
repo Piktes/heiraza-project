@@ -62,6 +62,7 @@ import {
     AlignLeft,
     AlignCenter,
     AlignRight,
+    AlignJustify,
     Link as LinkIcon,
     Unlink,
     Undo,
@@ -70,8 +71,10 @@ import {
     Variable,
     Type,
     ChevronDown,
+    Smile,
 } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 
 // Available template variables
 const TEMPLATE_VARIABLES = [
@@ -158,6 +161,19 @@ function EditorToolbar({ editor }: { editor: Editor }) {
     const [showVariables, setShowVariables] = useState(false);
     const [showLinkInput, setShowLinkInput] = useState(false);
     const [linkUrl, setLinkUrl] = useState("");
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+                setShowEmojiPicker(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const insertVariable = useCallback(
         (variable: string) => {
@@ -241,6 +257,13 @@ function EditorToolbar({ editor }: { editor: Editor }) {
                 title="Align Right"
             >
                 <AlignRight size={16} />
+            </ToolbarButton>
+            <ToolbarButton
+                onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+                isActive={editor.isActive({ textAlign: "justify" })}
+                title="Justify"
+            >
+                <AlignJustify size={16} />
             </ToolbarButton>
 
             <div className="w-px h-6 bg-border mx-1" />
@@ -348,6 +371,31 @@ function EditorToolbar({ editor }: { editor: Editor }) {
                                 </code>
                             </button>
                         ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Emoji Picker */}
+            <div className="relative" ref={emojiPickerRef}>
+                <ToolbarButton
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    title="Insert Emoji"
+                >
+                    <Smile size={16} />
+                </ToolbarButton>
+                {showEmojiPicker && (
+                    <div className="absolute top-full right-0 mt-1 z-50">
+                        <EmojiPicker
+                            onEmojiClick={(emojiData) => {
+                                editor.chain().focus().insertContent(emojiData.emoji).run();
+                                setShowEmojiPicker(false);
+                            }}
+                            theme={Theme.AUTO}
+                            width={320}
+                            height={400}
+                            previewConfig={{ showPreview: false }}
+                            searchPlaceholder="Search emoji..."
+                        />
                     </div>
                 )}
             </div>

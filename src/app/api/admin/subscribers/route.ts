@@ -66,10 +66,19 @@ export async function GET(request: NextRequest) {
             where.joinedAt = { gte: startDate };
         }
 
+        // Sort options
+        const sortBy = searchParams.get("sortBy") || "joinedAt";
+        const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
+
+        // Build orderBy clause
+        const validSortFields = ["email", "country", "joinedAt"];
+        const orderByField = validSortFields.includes(sortBy) ? sortBy : "joinedAt";
+        const orderBy = { [orderByField]: sortOrder };
+
         // Get paginated subscribers
         const subscribers = await prisma.subscriber.findMany({
             where,
-            orderBy: { joinedAt: "desc" },
+            orderBy,
             skip: (page - 1) * limit,
             take: limit,
         });

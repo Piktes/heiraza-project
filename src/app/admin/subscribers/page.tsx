@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
     Users, UserCheck, UserMinus, RefreshCw, Loader2, Search,
     Filter, ChevronLeft, ChevronRight, Globe, Flag, Trash2, Mail, Bell,
-    Download, FileText, FileSpreadsheet, MessageSquare, Calendar
+    Download, FileText, FileSpreadsheet, MessageSquare, Calendar, ArrowUpDown, ArrowUp, ArrowDown
 } from "lucide-react";
 import { InfoBar } from "@/components/admin/info-bar";
 import { jsPDF } from "jspdf";
@@ -122,7 +122,9 @@ export default function SubscribersPage() {
     const [topCountriesMode, setTopCountriesMode] = useState<TopCountriesMode>("total");
     const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
     const [timePeriod, setTimePeriod] = useState<string>("all");
-    const limit = 30;
+    const [sortBy, setSortBy] = useState<string>("joinedAt");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const limit = 20;
 
     const fetchSubscribers = useCallback(async () => {
         setLoading(true);
@@ -138,6 +140,8 @@ export default function SubscribersPage() {
             if (country) params.set("country", country);
             if (search) params.set("search", search);
             if (timePeriod && timePeriod !== "all") params.set("period", timePeriod);
+            if (sortBy) params.set("sortBy", sortBy);
+            if (sortOrder) params.set("sortOrder", sortOrder);
 
             const res = await fetch(`/api/admin/subscribers?${params}`);
             const result = await res.json();
@@ -150,7 +154,7 @@ export default function SubscribersPage() {
         } finally {
             setLoading(false);
         }
-    }, [country, status, search, page, topCountriesMode, timePeriod]);
+    }, [country, status, search, page, topCountriesMode, timePeriod, sortBy, sortOrder]);
 
     useEffect(() => {
         fetchSubscribers();
@@ -363,8 +367,12 @@ export default function SubscribersPage() {
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
                         {/* Total Subscribers */}
                         <button
-                            onClick={() => setTopCountriesMode("total")}
-                            className={`glass-card p-3 sm:p-5 text-left transition-all ${topCountriesMode === "total"
+                            onClick={() => {
+                                setTopCountriesMode("total");
+                                setStatus("all");
+                                setPage(1);
+                            }}
+                            className={`glass-card p-3 sm:p-5 text-left transition-all ${topCountriesMode === "total" && status === "all"
                                 ? "ring-2 ring-accent-coral shadow-lg"
                                 : "hover:shadow-md"
                                 }`}
@@ -382,7 +390,11 @@ export default function SubscribersPage() {
 
                         {/* Event Fans */}
                         <button
-                            onClick={() => setTopCountriesMode("eventFans")}
+                            onClick={() => {
+                                setTopCountriesMode("eventFans");
+                                setStatus("active");
+                                setPage(1);
+                            }}
                             className={`glass-card p-3 sm:p-5 text-left transition-all ${topCountriesMode === "eventFans"
                                 ? "ring-2 ring-green-500 shadow-lg"
                                 : "hover:shadow-md"
@@ -401,7 +413,11 @@ export default function SubscribersPage() {
 
                         {/* Unsubscribed */}
                         <button
-                            onClick={() => setTopCountriesMode("unsubscribed")}
+                            onClick={() => {
+                                setTopCountriesMode("unsubscribed");
+                                setStatus("unsubscribed");
+                                setPage(1);
+                            }}
                             className={`glass-card p-3 sm:p-5 text-left transition-all ${topCountriesMode === "unsubscribed"
                                 ? "ring-2 ring-red-500 shadow-lg"
                                 : "hover:shadow-md"
@@ -434,17 +450,21 @@ export default function SubscribersPage() {
                         </div>
                         <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             {data.topCountries.map((c, idx) => (
-                                <div
+                                <button
                                     key={c.country}
-                                    className={`flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-xl ${idx === 0 ? "bg-yellow-500/10" :
-                                        idx === 1 ? "bg-gray-500/10" :
-                                            "bg-amber-600/10"
-                                        }`}
+                                    onClick={() => {
+                                        setCountry(c.country);
+                                        setPage(1);
+                                    }}
+                                    className={`flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all hover:scale-105 ${idx === 0 ? "bg-yellow-500/10 hover:bg-yellow-500/20" :
+                                        idx === 1 ? "bg-gray-500/10 hover:bg-gray-500/20" :
+                                            "bg-amber-600/10 hover:bg-amber-600/20"
+                                        } ${country === c.country ? "ring-2 ring-accent-coral" : ""}`}
                                 >
                                     <span className="text-2xl sm:text-3xl mb-1">{getCountryFlag(c.country)}</span>
                                     <p className="font-medium text-xs sm:text-sm truncate w-full">{c.country}</p>
                                     <p className="text-muted-foreground text-xs">{c.count}</p>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -559,8 +579,8 @@ export default function SubscribersPage() {
                                     type="button"
                                     onClick={() => { setTimePeriod(period.value); setPage(1); }}
                                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${timePeriod === period.value
-                                            ? "bg-accent-coral text-white"
-                                            : "bg-muted hover:bg-muted/80"
+                                        ? "bg-accent-coral text-white"
+                                        : "bg-muted hover:bg-muted/80"
                                         }`}
                                 >
                                     {period.label}
@@ -595,9 +615,51 @@ export default function SubscribersPage() {
                         <>
                             {/* Table Header - Desktop only */}
                             <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/50 border-b border-border text-sm font-medium text-muted-foreground">
-                                <div className="col-span-4">Email</div>
-                                <div className="col-span-2">Location</div>
-                                <div className="col-span-2">Joined</div>
+                                <button
+                                    className="col-span-4 flex items-center gap-1 hover:text-foreground transition-colors"
+                                    onClick={() => {
+                                        if (sortBy === "email") {
+                                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                        } else {
+                                            setSortBy("email");
+                                            setSortOrder("asc");
+                                        }
+                                        setPage(1);
+                                    }}
+                                >
+                                    Email
+                                    {sortBy === "email" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                </button>
+                                <button
+                                    className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors"
+                                    onClick={() => {
+                                        if (sortBy === "country") {
+                                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                        } else {
+                                            setSortBy("country");
+                                            setSortOrder("asc");
+                                        }
+                                        setPage(1);
+                                    }}
+                                >
+                                    Location
+                                    {sortBy === "country" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                </button>
+                                <button
+                                    className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors"
+                                    onClick={() => {
+                                        if (sortBy === "joinedAt") {
+                                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                        } else {
+                                            setSortBy("joinedAt");
+                                            setSortOrder("desc");
+                                        }
+                                        setPage(1);
+                                    }}
+                                >
+                                    Joined
+                                    {sortBy === "joinedAt" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                </button>
                                 <div className="col-span-2">Status</div>
                                 <div className="col-span-2 text-right">Actions</div>
                             </div>

@@ -105,26 +105,28 @@ function PreviewModal({
                     </button>
                 </div>
 
-                {/* Email Preview */}
+                {/* Email Preview - Always white background like real emails */}
                 <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-gray-800">
-                    <div className="max-w-lg mx-auto bg-white dark:bg-gray-850 rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: 'var(--card-bg, white)' }}>
+                    <div className="max-w-lg mx-auto rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
                         {/* Sample Event Image */}
                         <div className="w-full h-48 bg-gradient-to-br from-accent-coral to-purple-600 flex items-center justify-center">
                             <span className="text-white text-lg font-medium">📸 Event Image</span>
                         </div>
 
-                        {/* Email Content */}
+                        {/* Email Content - Force dark text on white background like real email */}
                         <div
-                            className="p-6 text-gray-900 dark:text-gray-100 email-preview-content"
+                            className="p-6 email-preview-content"
                             style={{
                                 fontFamily: "Arial, sans-serif",
+                                backgroundColor: '#ffffff',
+                                color: '#1a1a1a',
                             }}
-                            dangerouslySetInnerHTML={{ __html: `<style>.email-preview-content p { margin-bottom: 1em; min-height: 1.5em; } .email-preview-content p:empty { min-height: 1em; }</style>${previewHtml}` }}
+                            dangerouslySetInnerHTML={{ __html: `<style>.email-preview-content p { margin-bottom: 1em; min-height: 1.5em; color: #1a1a1a !important; } .email-preview-content p:empty { min-height: 1em; } .email-preview-content h1, .email-preview-content h2, .email-preview-content h3, .email-preview-content h4, .email-preview-content h5, .email-preview-content h6 { color: #1a1a1a !important; } .email-preview-content strong { color: #1a1a1a !important; } .email-preview-content a { color: #E8795E !important; }</style>${previewHtml}` }}
                         />
 
                         {/* Logo */}
                         {logoUrl && (
-                            <div className="px-6 pb-4 text-center">
+                            <div className="px-6 pb-4 text-center" style={{ backgroundColor: '#ffffff' }}>
                                 <img
                                     src={logoUrl}
                                     alt="Logo"
@@ -134,9 +136,9 @@ function PreviewModal({
                         )}
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400">
+                        <div className="px-6 py-4 border-t text-center text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', color: '#6b7280' }}>
                             <p>You're receiving this because you subscribed to event alerts.</p>
-                            <p><a href="#" className="text-gray-500 dark:text-gray-400 underline">Unsubscribe</a> from future emails</p>
+                            <p><a href="#" style={{ color: '#6b7280', textDecoration: 'underline' }}>Unsubscribe</a> from future emails</p>
                         </div>
                     </div>
                 </div>

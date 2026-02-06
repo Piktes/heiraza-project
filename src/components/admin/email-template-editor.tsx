@@ -41,6 +41,8 @@ const TEMPLATE_VARIABLES = [
 
 // Font family options
 const FONT_FAMILIES = [
+    { value: "Cinzel", label: "Cinzel (Display)" },
+    { value: "Playfair Display", label: "Playfair Display" },
     { value: "Arial", label: "Arial" },
     { value: "Georgia", label: "Georgia" },
     { value: "Times New Roman", label: "Times New Roman" },

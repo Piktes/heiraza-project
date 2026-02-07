@@ -407,6 +407,7 @@ model PressQuote {
   quoteText    String             @db.Text
   sourceName   String             @db.VarChar(255)
   sourceUrl    String?            @db.VarChar(500)
+  imageUrl     String?            @db.LongText
   categoryId   Int
   category     PressQuoteCategory @relation(fields: [categoryId], references: [id])
   sortOrder    Int                @default(0)

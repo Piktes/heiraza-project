@@ -640,9 +640,23 @@ export async function addQuote(formData: FormData) {
     const sourceName = formData.get("sourceName") as string;
     const sourceUrl = formData.get("sourceUrl") as string;
     const categoryId = parseInt(formData.get("categoryId") as string);
+    const imageData = formData.get("imageData") as string | null;
 
     if (!quoteText || !sourceName || !categoryId) {
         return { success: false, error: "Quote text, source name, and category are required" };
+    }
+
+    // Handle image upload if provided
+    let imageUrl: string | null = null;
+    if (imageData && imageData.startsWith("data:image")) {
+        try {
+            const result = await uploadPressKitImage(imageData, "quote");
+            if (result.success && result.url) {
+                imageUrl = result.url;
+            }
+        } catch (error) {
+            console.error("Error uploading quote image:", error);
+        }
     }
 
     const lastItem = await prisma.pressQuote.findFirst({
@@ -656,6 +670,7 @@ export async function addQuote(formData: FormData) {
             quoteText,
             sourceName,
             sourceUrl: sourceUrl || null,
+            imageUrl,
             categoryId,
             sortOrder: newSortOrder,
             isVisible: true,

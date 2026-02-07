@@ -13,6 +13,7 @@ interface PressPhoto {
     thumbnailUrl: string | null;
     altText: string;
     photographerCredit: string | null;
+    isFeatured?: boolean;
 }
 
 interface MusicHighlight {
@@ -33,6 +34,7 @@ interface PressQuote {
     quoteText: string;
     sourceName: string;
     sourceUrl: string | null;
+    imageUrl: string | null;
 }
 
 interface QuoteCategory {
@@ -74,19 +76,27 @@ function CollapsibleSection({
     title,
     children,
     defaultOpen = false,
-    id
+    id,
+    isOpen: controlledIsOpen,
+    onToggle
 }: {
     title: string;
     children: React.ReactNode;
     defaultOpen?: boolean;
     id?: string;
+    isOpen?: boolean;
+    onToggle?: () => void;
 }) {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
+    const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
+
+    // Use controlled or uncontrolled mode
+    const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+    const handleToggle = onToggle || (() => setInternalIsOpen(!internalIsOpen));
 
     return (
         <section id={id} className="glass-card rounded-3xl overflow-hidden">
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleToggle}
                 className="w-full p-8 md:p-12 flex items-center justify-between hover:bg-white/5 transition-colors text-left"
             >
                 <h2 className="font-display text-2xl tracking-wide">{title}</h2>
@@ -129,7 +139,7 @@ function getPlatformIcon(platform: string) {
         case 'apple music':
             return (
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.994 6.124a9.23 9.23 0 00-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 00-1.877-.726 10.496 10.496 0 00-1.564-.15c-.04-.003-.083-.01-.124-.013H5.99c-.152.01-.303.017-.455.026-.747.043-1.49.123-2.193.364-1.064.366-1.914.97-2.547 1.876-.329.47-.534.99-.66 1.55a9.598 9.598 0 00-.131 2.132v11.076c.01.098.02.196.035.294.117 1.24.388 2.413 1.13 3.428.49.67 1.114 1.17 1.87 1.503.604.266 1.24.4 1.9.465.604.06 1.21.06 1.816.062h11.034c.164 0 .328-.01.49-.024.78-.055 1.547-.175 2.26-.504.91-.42 1.593-1.068 2.11-1.878.408-.632.627-1.33.737-2.062.035-.24.062-.483.08-.725.02-.276.02-.553.02-.83V6.24c-.008-.038-.008-.076-.013-.116zm-6.384 6.693c-.015 2.148-.85 3.9-2.572 5.203-.925.7-1.982 1.098-3.141 1.2-.605.055-1.206.02-1.8-.107-.798-.17-1.512-.53-2.1-1.15-.466-.49-.792-1.068-.99-1.718-.274-.895-.353-1.81-.197-2.736.17-1.01.544-1.925 1.216-2.705.56-.65 1.208-1.136 2.046-1.344.467-.116.934-.164 1.402-.105 1.32.168 2.353.768 3.093 1.85.086.126.03.186-.085.244-.498.247-.99.504-1.486.758-.027.014-.07.037-.093.007-.47-.62-1.097-.94-1.875-.93-.7.01-1.19.33-1.57.88-.43.62-.545 1.34-.42 2.095.137.81.512 1.46 1.229 1.863.59.33 1.23.4 1.897.252.635-.14 1.104-.52 1.465-1.026.102-.144.036-.21-.097-.253-.13-.04-.266-.072-.398-.11-.34-.1-.68-.202-1.02-.303-.243-.072-.31-.165-.237-.418.073-.254.144-.51.222-.764.055-.18.165-.25.347-.195.627.185 1.255.368 1.88.554.143.042.25.125.336.25.375.543.54 1.15.594 1.79.02.224.035.45.047.69z" />
+                    <path d="M23.997 6.124c0-.738-.065-1.47-.24-2.19-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 00-1.877-.726 10.496 10.496 0 00-1.564-.15c-.04-.003-.083-.01-.124-.013H5.988c-.152.01-.303.017-.455.026-.747.043-1.49.123-2.193.364-1.064.366-1.914.97-2.547 1.876-.329.47-.534.99-.66 1.55-.18.8-.24 1.612-.24 2.426v11.56c0 .814.06 1.625.24 2.425.126.56.33 1.08.66 1.55.633.906 1.483 1.51 2.547 1.876.703.24 1.446.32 2.193.364.152.01.303.017.455.026h12.02c.04-.003.083-.01.124-.013a10.494 10.494 0 001.564-.15c.712-.15 1.373-.442 1.877-.726 1.118-.733 1.863-1.733 2.18-3.043.175-.72.24-1.452.24-2.19V6.125zm-6.423 3.99v5.712c0 .417-.058.828-.244 1.206-.263.532-.7.916-1.244 1.088-.35.11-.718.148-1.085.148-.7 0-1.4-.22-1.903-.708-.398-.386-.638-.91-.638-1.475 0-.9.55-1.665 1.354-2.003.404-.17.855-.248 1.3-.248.346 0 .69.055 1.01.164V9.59l-4.633 1.08v6.204c0 .36-.046.72-.198 1.048-.226.484-.622.87-1.12 1.073-.322.13-.67.182-1.018.182-.786 0-1.512-.273-2.003-.708-.4-.355-.68-.87-.68-1.443 0-.903.53-1.65 1.353-2.003.404-.17.855-.247 1.3-.247.345 0 .69.054 1.01.164V8.96c0-.258.054-.51.158-.745.163-.368.46-.656.838-.8.298-.114.614-.19.932-.214l5.096-1.19c.25-.058.51-.087.765-.087.393 0 .793.096 1.093.364.307.275.48.673.48 1.096v2.73z" />
                 </svg>
             );
         case 'bandcamp':
@@ -192,13 +202,11 @@ function MusicHighlightsSection({ tracks }: { tracks: MusicHighlight[] }) {
 
     const platforms = Object.keys(groupedByPlatform);
 
-    // State to track expanded platforms
+    // State to track expanded platforms - all start collapsed
     const [expandedPlatforms, setExpandedPlatforms] = useState<Record<string, boolean>>(() => {
-        // By default, expand all platforms if there's only one track per platform
-        // Or expand the first platform with multiple tracks
         const initial: Record<string, boolean> = {};
-        platforms.forEach((p, i) => {
-            initial[p] = i === 0 || groupedByPlatform[p].length === 1;
+        platforms.forEach((p) => {
+            initial[p] = false; // All platforms start collapsed
         });
         return initial;
     });
@@ -525,14 +533,67 @@ export function PressKitClientContent({
         (contact.showBaseLocation && contact.baseLocation)
     );
 
+    // Section open states for global control
+    const [sectionStates, setSectionStates] = useState({
+        bio: false,
+        music: false,
+        videos: false,
+        photos: false,
+        quotes: false,
+        contact: false,
+    });
+
+    const allOpen = Object.values(sectionStates).every(v => v);
+
+    const toggleAllSections = () => {
+        const newState = !allOpen;
+        setSectionStates({
+            bio: newState,
+            music: newState,
+            videos: newState,
+            photos: newState,
+            quotes: newState,
+            contact: newState,
+        });
+    };
+
+    const toggleSection = (key: keyof typeof sectionStates) => {
+        setSectionStates(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
     return (
         <>
             <AnimatedBackground />
 
             <div className="relative z-10 max-w-5xl mx-auto px-4 pb-20 space-y-8">
+                {/* Expand/Collapse All Button */}
+                <div className="flex justify-end">
+                    <button
+                        onClick={toggleAllSections}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-sm font-medium transition-all"
+                    >
+                        {allOpen ? (
+                            <>
+                                <ChevronUp size={16} />
+                                Collapse All
+                            </>
+                        ) : (
+                            <>
+                                <ChevronDown size={16} />
+                                Expand All
+                            </>
+                        )}
+                    </button>
+                </div>
+
                 {/* Bio Section */}
                 {hasBio && (
-                    <CollapsibleSection title="About" id="bio">
+                    <CollapsibleSection
+                        title="About"
+                        id="bio"
+                        isOpen={sectionStates.bio}
+                        onToggle={() => toggleSection('bio')}
+                    >
                         <div className="pt-6 space-y-6">
                             {/* Short Bio */}
                             {bio.showShortBio && bio.shortBio && (
@@ -570,14 +631,24 @@ export function PressKitClientContent({
 
                 {/* Music Highlights - Grouped by Platform */}
                 {hasMusic && (
-                    <CollapsibleSection title="Featured Music" id="music">
+                    <CollapsibleSection
+                        title="Featured Music"
+                        id="music"
+                        isOpen={sectionStates.music}
+                        onToggle={() => toggleSection('music')}
+                    >
                         <MusicHighlightsSection tracks={musicHighlights} />
                     </CollapsibleSection>
                 )}
 
                 {/* Videos - 2 columns */}
                 {hasVideos && (
-                    <CollapsibleSection title="Videos" id="videos">
+                    <CollapsibleSection
+                        title="Videos"
+                        id="videos"
+                        isOpen={sectionStates.videos}
+                        onToggle={() => toggleSection('videos')}
+                    >
                         <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                             {videos.map(video => {
                                 const embedUrl = getVideoEmbedUrl(video.videoUrl);
@@ -613,7 +684,12 @@ export function PressKitClientContent({
 
                 {/* Photos - 4 columns desktop, 2 mobile */}
                 {hasPhotos && (
-                    <CollapsibleSection title="Press Photos" id="photos">
+                    <CollapsibleSection
+                        title="Press Photos"
+                        id="photos"
+                        isOpen={sectionStates.photos}
+                        onToggle={() => toggleSection('photos')}
+                    >
                         <div className="pt-6">
                             <div className="flex justify-end mb-4">
                                 {allowDownload && photos.length > 0 && (
@@ -637,6 +713,15 @@ export function PressKitClientContent({
                                         onClick={() => openLightbox(index)}
                                         className="relative group rounded-xl overflow-hidden aspect-square focus:outline-none focus:ring-2 focus:ring-accent-coral"
                                     >
+                                        {/* Featured Badge */}
+                                        {photo.isFeatured && (
+                                            <div className="absolute top-2 left-2 z-10 bg-accent-coral text-white px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 shadow-lg">
+                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
+                                                Featured
+                                            </div>
+                                        )}
                                         <img
                                             src={photo.thumbnailUrl || photo.imageUrl}
                                             alt={photo.altText}
@@ -657,7 +742,12 @@ export function PressKitClientContent({
 
                 {/* Press Quotes */}
                 {hasQuotes && (
-                    <CollapsibleSection title="Press" id="quotes">
+                    <CollapsibleSection
+                        title="Press"
+                        id="quotes"
+                        isOpen={sectionStates.quotes}
+                        onToggle={() => toggleSection('quotes')}
+                    >
                         <div className="pt-6 space-y-10">
                             {quoteCategories.map(category => (
                                 <div key={category.id}>
@@ -665,6 +755,15 @@ export function PressKitClientContent({
                                     <div className="space-y-6">
                                         {category.quotes.map(quote => (
                                             <blockquote key={quote.id} className="border-l-4 border-accent-coral pl-6 py-2">
+                                                {quote.imageUrl && (
+                                                    <div className="mb-3">
+                                                        <img
+                                                            src={quote.imageUrl}
+                                                            alt={`${quote.sourceName} article`}
+                                                            className="h-16 w-auto max-w-[200px] object-contain rounded-lg"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <p className="text-lg italic mb-2">"{quote.quoteText}"</p>
                                                 <footer className="text-muted-foreground">
                                                     —{" "}
@@ -687,7 +786,12 @@ export function PressKitClientContent({
 
                 {/* Contact */}
                 {hasContact && (
-                    <CollapsibleSection title="Contact" id="contact">
+                    <CollapsibleSection
+                        title="Contact"
+                        id="contact"
+                        isOpen={sectionStates.contact}
+                        onToggle={() => toggleSection('contact')}
+                    >
                         <div className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                             {contact.showBookingEmail && contact.bookingEmail && (
                                 <a

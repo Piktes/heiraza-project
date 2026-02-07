@@ -90,6 +90,7 @@ interface PressQuote {
     quoteText: string;
     sourceName: string;
     sourceUrl: string | null;
+    imageUrl: string | null;
     categoryId: number;
     sortOrder: number;
     isVisible: boolean;
@@ -322,6 +323,32 @@ function PhotosSection() {
         loadPhotos();
     };
 
+    const handleMoveUp = async (index: number) => {
+        if (index === 0) return;
+        const newPhotos = [...photos];
+        [newPhotos[index - 1], newPhotos[index]] = [newPhotos[index], newPhotos[index - 1]];
+
+        const order = newPhotos.map((p, i) => ({ id: p.id, sortOrder: i }));
+        const formData = new FormData();
+        formData.set("order", JSON.stringify(order));
+        await reorderPressPhotos(formData);
+        setPhotos(newPhotos);
+        toast.success("Photo order updated");
+    };
+
+    const handleMoveDown = async (index: number) => {
+        if (index === photos.length - 1) return;
+        const newPhotos = [...photos];
+        [newPhotos[index], newPhotos[index + 1]] = [newPhotos[index + 1], newPhotos[index]];
+
+        const order = newPhotos.map((p, i) => ({ id: p.id, sortOrder: i }));
+        const formData = new FormData();
+        formData.set("order", JSON.stringify(order));
+        await reorderPressPhotos(formData);
+        setPhotos(newPhotos);
+        toast.success("Photo order updated");
+    };
+
     if (loading) return <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>;
 
     return (
@@ -368,7 +395,7 @@ function PhotosSection() {
 
             {/* Photos Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.map(photo => (
+                {photos.map((photo, index) => (
                     <div key={photo.id} className="relative group rounded-xl overflow-hidden border border-border">
                         <img
                             src={photo.thumbnailUrl || photo.imageUrl}
@@ -380,6 +407,26 @@ function PhotosSection() {
                                 <Star size={12} /> Featured
                             </div>
                         )}
+                        {/* Order controls - top right */}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                                onClick={() => handleMoveUp(index)}
+                                disabled={index === 0}
+                                className={`p-1.5 rounded-full bg-black/60 hover:bg-black/80 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                title="Move Up"
+                            >
+                                <ChevronUp size={14} className="text-white" />
+                            </button>
+                            <button
+                                onClick={() => handleMoveDown(index)}
+                                disabled={index === photos.length - 1}
+                                className={`p-1.5 rounded-full bg-black/60 hover:bg-black/80 ${index === photos.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                title="Move Down"
+                            >
+                                <ChevronDown size={14} className="text-white" />
+                            </button>
+                        </div>
+                        {/* Action buttons - center */}
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => handleToggleVisibility(photo)} className="p-2 bg-white/20 rounded-full hover:bg-white/30" title={photo.isVisible ? "Hide" : "Show"}>
                                 {photo.isVisible ? <Eye size={16} className="text-white" /> : <EyeOff size={16} className="text-white" />}
@@ -666,6 +713,8 @@ function QuotesSection() {
     const [newSourceName, setNewSourceName] = useState("");
     const [newSourceUrl, setNewSourceUrl] = useState("");
     const [newCategoryId, setNewCategoryId] = useState<number | null>(null);
+    const [newQuoteImage, setNewQuoteImage] = useState<string | null>(null);
+    const [quoteImagePreview, setQuoteImagePreview] = useState<string | null>(null);
 
     const loadData = async () => {
         const [cats, quoteList] = await Promise.all([getAllQuoteCategories(), getAllQuotes()]);
@@ -691,6 +740,25 @@ function QuotesSection() {
         setSaving(false);
     };
 
+    const handleQuoteImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please select an image file");
+            return;
+        }
+
+        try {
+            const compressedData = await compressImage(file);
+            setNewQuoteImage(compressedData);
+            setQuoteImagePreview(compressedData);
+        } catch (error) {
+            console.error("Error processing image:", error);
+            toast.error("Failed to process image");
+        }
+    };
+
     const handleAddQuote = async () => {
         if (!newQuoteText.trim() || !newSourceName.trim() || !newCategoryId) {
             toast.error("Please fill in quote, source, and select category");
@@ -702,6 +770,9 @@ function QuotesSection() {
         formData.set("sourceName", newSourceName);
         formData.set("sourceUrl", newSourceUrl);
         formData.set("categoryId", newCategoryId.toString());
+        if (newQuoteImage) {
+            formData.set("imageData", newQuoteImage);
+        }
 
         const result = await addQuote(formData);
         if (result.success) {
@@ -709,6 +780,8 @@ function QuotesSection() {
             setNewQuoteText("");
             setNewSourceName("");
             setNewSourceUrl("");
+            setNewQuoteImage(null);
+            setQuoteImagePreview(null);
             loadData();
         }
         setSaving(false);
@@ -807,6 +880,35 @@ function QuotesSection() {
                                 ))}
                             </select>
                         </div>
+
+                        {/* Image Upload */}
+                        <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm text-muted-foreground mb-1">Cover Image (optional)</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleQuoteImageSelect}
+                                    className="w-full text-sm file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-accent-coral/10 file:text-accent-coral hover:file:bg-accent-coral/20"
+                                />
+                            </div>
+                            {quoteImagePreview && (
+                                <div className="relative">
+                                    <img
+                                        src={quoteImagePreview}
+                                        alt="Preview"
+                                        className="h-16 w-20 object-contain rounded-lg border border-border bg-muted/30"
+                                    />
+                                    <button
+                                        onClick={() => { setNewQuoteImage(null); setQuoteImagePreview(null); }}
+                                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         <button onClick={handleAddQuote} disabled={saving} className="btn-primary flex items-center gap-2">
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                             Add Quote

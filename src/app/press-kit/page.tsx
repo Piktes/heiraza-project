@@ -114,6 +114,7 @@ export default async function PressKitPage() {
                     thumbnailUrl: p.thumbnailUrl,
                     altText: p.altText,
                     photographerCredit: p.photographerCredit,
+                    isFeatured: p.isFeatured,
                 }))}
                 musicHighlights={musicHighlights.map(m => ({
                     id: m.id,
@@ -134,6 +135,7 @@ export default async function PressKitPage() {
                         quoteText: q.quoteText,
                         sourceName: q.sourceName,
                         sourceUrl: q.sourceUrl,
+                        imageUrl: q.imageUrl,
                     })),
                 }))}
                 contact={contact ? {

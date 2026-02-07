@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     FileText, Image as ImageIcon, Music, Video, Quote, Mail, Settings,
     Plus, Trash2, Eye, EyeOff, Star, Edit, X, Loader2, GripVertical,
@@ -879,6 +879,7 @@ function QuotesSection() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleteModal, setDeleteModal] = useState<{ open: boolean; type: "category" | "quote"; id: number | null }>({ open: false, type: "quote", id: null });
+    const quoteFormRef = useRef<HTMLDivElement>(null);
 
     // Category form
     const [newCategoryName, setNewCategoryName] = useState("");
@@ -1002,7 +1003,9 @@ function QuotesSection() {
         setNewQuoteImage(null); // Reset new image buffer
 
         // Scroll to form
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (quoteFormRef.current) {
+            quoteFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     };
 
     const resetForm = () => {
@@ -1079,7 +1082,7 @@ function QuotesSection() {
 
             {/* Add/Edit Quote */}
             {categories.length > 0 && (
-                <div className={`p-4 border rounded-xl ${editingQuote ? 'border-accent-coral/50 bg-accent-coral/5' : 'border-dashed border-border'}`}>
+                <div ref={quoteFormRef} className={`p-4 border rounded-xl ${editingQuote ? 'border-accent-coral/50 bg-accent-coral/5' : 'border-dashed border-border'}`}>
                     <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium">{editingQuote ? "Edit Quote" : "Add Quote"}</h4>
                         {editingQuote && (

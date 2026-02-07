@@ -10,6 +10,22 @@ import { toast } from "sonner";
 import { compressImage, createThumbnail } from "@/lib/image-compression";
 import { PressKitBioEditor } from "@/components/admin/press-kit-bio-editor";
 import { InfoBar } from "@/components/admin/info-bar";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Server Actions
 import {
@@ -245,6 +261,99 @@ function BioSection() {
 // ========================================
 // PHOTOS SECTION
 // ========================================
+
+// Sortable Photo Item Component
+function SortablePhotoItem({
+    photo,
+    index,
+    isFirst,
+    isLast,
+    onMoveUp,
+    onMoveDown,
+    onToggleVisibility,
+    onSetFeatured,
+    onDelete
+}: {
+    photo: PressPhoto,
+    index: number,
+    isFirst: boolean,
+    isLast: boolean,
+    onMoveUp: () => void,
+    onMoveDown: () => void,
+    onToggleVisibility: () => void,
+    onSetFeatured: () => void,
+    onDelete: () => void
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: photo.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="relative group rounded-xl overflow-hidden border border-border bg-card">
+            {/* Drag Handle Overlay - Entire image is draggable via listeners */}
+            <div {...attributes} {...listeners} className="cursor-move">
+                <img
+                    src={photo.thumbnailUrl || photo.imageUrl}
+                    alt={photo.altText}
+                    className="w-full aspect-square object-cover"
+                />
+            </div>
+
+            {photo.isFeatured && (
+                <div className="absolute top-2 left-2 bg-accent-coral text-white px-2 py-1 rounded-full text-xs flex items-center gap-1 z-10 pointer-events-none">
+                    <Star size={12} /> Featured
+                </div>
+            )}
+
+            {/* Order controls - top right (keep them working even with DnD) */}
+            <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+                    disabled={isFirst}
+                    className={`p-1.5 rounded-full bg-black/60 hover:bg-black/80 ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}`}
+                    title="Move Up"
+                >
+                    <ChevronUp size={14} className="text-white" />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+                    disabled={isLast}
+                    className={`p-1.5 rounded-full bg-black/60 hover:bg-black/80 ${isLast ? 'opacity-30 cursor-not-allowed' : ''}`}
+                    title="Move Down"
+                >
+                    <ChevronDown size={14} className="text-white" />
+                </button>
+            </div>
+
+            {/* Action buttons - center */}
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-20 pointer-events-none">
+                <div className="pointer-events-auto flex items-center gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors" title={photo.isVisible ? "Hide" : "Show"}>
+                        {photo.isVisible ? <Eye size={16} className="text-white" /> : <EyeOff size={16} className="text-white" />}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); onSetFeatured(); }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors" title="Set Featured">
+                        <Star size={16} className="text-white" />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 transition-colors" title="Delete">
+                        <Trash2 size={16} className="text-white" />
+                    </button>
+                </div>
+            </div>
+
+            {!photo.isVisible && <div className="absolute inset-0 bg-black/40 pointer-events-none z-10" />}
+        </div>
+    );
+}
+
 function PhotosSection() {
     const [photos, setPhotos] = useState<PressPhoto[]>([]);
     const [loading, setLoading] = useState(true);
@@ -349,6 +458,36 @@ function PhotosSection() {
         toast.success("Photo order updated");
     };
 
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = async (event: any) => {
+        const { active, over } = event;
+
+        if (active.id !== over.id) {
+            setPhotos((items) => {
+                const oldIndex = items.findIndex((item) => item.id === active.id);
+                const newIndex = items.findIndex((item) => item.id === over.id);
+
+                const newItems = arrayMove(items, oldIndex, newIndex);
+
+                // Updates State immediately for UI responsiveness
+                // Trigger Server Action in background
+                const order = newItems.map((p, i) => ({ id: p.id, sortOrder: i }));
+                const formData = new FormData();
+                formData.set("order", JSON.stringify(order));
+                reorderPressPhotos(formData).then(() => toast.success("Order updated"));
+
+                return newItems;
+            });
+        }
+    };
+
     if (loading) return <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>;
 
     return (
@@ -393,55 +532,34 @@ function PhotosSection() {
                 </button>
             </div>
 
-            {/* Photos Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.map((photo, index) => (
-                    <div key={photo.id} className="relative group rounded-xl overflow-hidden border border-border">
-                        <img
-                            src={photo.thumbnailUrl || photo.imageUrl}
-                            alt={photo.altText}
-                            className="w-full aspect-square object-cover"
-                        />
-                        {photo.isFeatured && (
-                            <div className="absolute top-2 left-2 bg-accent-coral text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                                <Star size={12} /> Featured
-                            </div>
-                        )}
-                        {/* Order controls - top right */}
-                        <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                onClick={() => handleMoveUp(index)}
-                                disabled={index === 0}
-                                className={`p-1.5 rounded-full bg-black/60 hover:bg-black/80 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                title="Move Up"
-                            >
-                                <ChevronUp size={14} className="text-white" />
-                            </button>
-                            <button
-                                onClick={() => handleMoveDown(index)}
-                                disabled={index === photos.length - 1}
-                                className={`p-1.5 rounded-full bg-black/60 hover:bg-black/80 ${index === photos.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                title="Move Down"
-                            >
-                                <ChevronDown size={14} className="text-white" />
-                            </button>
-                        </div>
-                        {/* Action buttons - center */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <button onClick={() => handleToggleVisibility(photo)} className="p-2 bg-white/20 rounded-full hover:bg-white/30" title={photo.isVisible ? "Hide" : "Show"}>
-                                {photo.isVisible ? <Eye size={16} className="text-white" /> : <EyeOff size={16} className="text-white" />}
-                            </button>
-                            <button onClick={() => handleSetFeatured(photo.id)} className="p-2 bg-white/20 rounded-full hover:bg-white/30" title="Set Featured">
-                                <Star size={16} className="text-white" />
-                            </button>
-                            <button onClick={() => setDeleteModal({ open: true, id: photo.id })} className="p-2 bg-red-500/80 rounded-full hover:bg-red-500" title="Delete">
-                                <Trash2 size={16} className="text-white" />
-                            </button>
-                        </div>
-                        {!photo.isVisible && <div className="absolute inset-0 bg-black/40 pointer-events-none" />}
+            {/* Photos Grid with DnD */}
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext
+                    items={photos.map(p => p.id)}
+                    strategy={rectSortingStrategy}
+                >
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {photos.map((photo, index) => (
+                            <SortablePhotoItem
+                                key={photo.id}
+                                photo={photo}
+                                index={index}
+                                isFirst={index === 0}
+                                isLast={index === photos.length - 1}
+                                onMoveUp={() => handleMoveUp(index)}
+                                onMoveDown={() => handleMoveDown(index)}
+                                onToggleVisibility={() => handleToggleVisibility(photo)}
+                                onSetFeatured={() => handleSetFeatured(photo.id)}
+                                onDelete={() => setDeleteModal({ open: true, id: photo.id })}
+                            />
+                        ))}
                     </div>
-                ))}
-            </div>
+                </SortableContext>
+            </DndContext>
 
             {photos.length === 0 && <p className="text-center text-muted-foreground py-8">No photos yet. Add your first press photo above.</p>}
 
@@ -477,6 +595,19 @@ function MusicSection() {
     };
 
     useEffect(() => { loadHighlights(); }, []);
+
+    const handleToggleVisibility = async (highlight: MusicHighlight) => {
+        const formData = new FormData();
+        formData.set("id", highlight.id.toString());
+        formData.set("title", highlight.title);
+        formData.set("platform", highlight.platform);
+        formData.set("embedUrl", highlight.embedUrl);
+        formData.set("isVisible", (!highlight.isVisible).toString());
+
+        await updateMusicHighlight(formData);
+        toast.success(highlight.isVisible ? "Music hidden" : "Music visible");
+        loadHighlights();
+    };
 
     const handleAdd = async () => {
         if (!newTitle.trim() || !newEmbedUrl.trim()) {
@@ -569,9 +700,18 @@ function MusicSection() {
                                 <p className="text-sm text-muted-foreground capitalize">{h.platform}</p>
                             </div>
                         </div>
-                        <button onClick={() => setDeleteModal({ open: true, id: h.id })} className="p-2 hover:bg-red-500/20 rounded-lg text-red-500">
-                            <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handleToggleVisibility(h)}
+                                className={`p-2 rounded-lg transition-colors ${h.isVisible ? 'bg-accent-coral/20 text-accent-coral' : 'bg-muted text-muted-foreground'}`}
+                                title={h.isVisible ? "Visible" : "Hidden"}
+                            >
+                                {h.isVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+                            </button>
+                            <button onClick={() => setDeleteModal({ open: true, id: h.id })} className="p-2 hover:bg-red-500/20 rounded-lg text-red-500">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -608,6 +748,18 @@ function VideosSection() {
     };
 
     useEffect(() => { loadVideos(); }, []);
+
+    const handleToggleVisibility = async (video: PressKitVideo) => {
+        const formData = new FormData();
+        formData.set("id", video.id.toString());
+        formData.set("title", video.title);
+        formData.set("videoUrl", video.videoUrl);
+        formData.set("isVisible", (!video.isVisible).toString());
+
+        await updatePressKitVideo(formData);
+        toast.success(video.isVisible ? "Video hidden" : "Video visible");
+        loadVideos();
+    };
 
     const handleAdd = async () => {
         if (!newTitle.trim() || !newVideoUrl.trim()) {
@@ -676,9 +828,18 @@ function VideosSection() {
                             <Video size={16} className="text-muted-foreground" />
                             <p className="font-medium">{v.title}</p>
                         </div>
-                        <button onClick={() => setDeleteModal({ open: true, id: v.id })} className="p-2 hover:bg-red-500/20 rounded-lg text-red-500">
-                            <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handleToggleVisibility(v)}
+                                className={`p-2 rounded-lg transition-colors ${v.isVisible ? 'bg-accent-coral/20 text-accent-coral' : 'bg-muted text-muted-foreground'}`}
+                                title={v.isVisible ? "Visible" : "Hidden"}
+                            >
+                                {v.isVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+                            </button>
+                            <button onClick={() => setDeleteModal({ open: true, id: v.id })} className="p-2 hover:bg-red-500/20 rounded-lg text-red-500">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -725,6 +886,27 @@ function QuotesSection() {
     };
 
     useEffect(() => { loadData(); }, []);
+
+    const handleToggleQuoteVisibility = async (quote: PressQuote) => {
+        const formData = new FormData();
+        formData.set("id", quote.id.toString());
+        formData.set("isVisible", quote.isVisible.toString());
+
+        await toggleQuoteVisibility(formData);
+        toast.success(quote.isVisible ? "Quote hidden" : "Quote visible");
+        loadData();
+    };
+
+    const handleToggleCategoryVisibility = async (category: QuoteCategory) => {
+        const formData = new FormData();
+        formData.set("id", category.id.toString());
+        formData.set("name", category.name);
+        formData.set("isVisible", (!category.isVisible).toString());
+
+        await updateQuoteCategory(formData);
+        toast.success(category.isVisible ? "Category hidden" : "Category visible");
+        loadData();
+    };
 
     const handleAddCategory = async () => {
         if (!newCategoryName.trim()) return;
@@ -832,7 +1014,14 @@ function QuotesSection() {
             {categories.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                     {categories.map(cat => (
-                        <div key={cat.id} className="flex items-center gap-2 px-3 py-1 bg-muted rounded-full text-sm">
+                        <div key={cat.id} className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${cat.isVisible ? 'bg-muted border-transparent' : 'bg-muted/50 border-dashed border-muted-foreground/30 opacity-70'}`}>
+                            <button
+                                onClick={() => handleToggleCategoryVisibility(cat)}
+                                className="hover:text-accent-coral transition-colors"
+                                title={cat.isVisible ? "Visible" : "Hidden"}
+                            >
+                                {cat.isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                            </button>
                             <span>{cat.name}</span>
                             <span className="text-muted-foreground">({cat.quotes?.length || 0})</span>
                             <button onClick={() => setDeleteModal({ open: true, type: "category", id: cat.id })} className="text-red-500 hover:text-red-600">
@@ -925,12 +1114,21 @@ function QuotesSection() {
                         <div className="space-y-2">
                             {quotes.filter(q => q.categoryId === cat.id).map(q => (
                                 <div key={q.id} className="p-4 bg-muted/30 rounded-xl">
-                                    <p className="italic mb-2">"{q.quoteText}"</p>
+                                    <p className={`italic mb-2 ${!q.isVisible ? 'text-muted-foreground' : ''}`}>"{q.quoteText}"</p>
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-muted-foreground">— {q.sourceName}</span>
-                                        <button onClick={() => setDeleteModal({ open: true, type: "quote", id: q.id })} className="p-1 text-red-500 hover:text-red-600">
-                                            <Trash2 size={14} />
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleToggleQuoteVisibility(q)}
+                                                className={`p-1 rounded transition-colors ${q.isVisible ? 'text-accent-coral hover:bg-accent-coral/10' : 'text-muted-foreground hover:bg-muted'}`}
+                                                title={q.isVisible ? "Visible" : "Hidden"}
+                                            >
+                                                {q.isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                                            </button>
+                                            <button onClick={() => setDeleteModal({ open: true, type: "quote", id: q.id })} className="p-1 text-red-500 hover:text-red-600">
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

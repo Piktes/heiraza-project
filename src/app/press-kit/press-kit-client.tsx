@@ -599,7 +599,10 @@ export function PressKitClientContent({
                             {bio.showShortBio && bio.shortBio && (
                                 <div className="p-6 bg-accent-coral/5 rounded-2xl border border-accent-coral/20">
                                     <h3 className="text-sm font-medium text-accent-coral uppercase tracking-wider mb-3">Short Bio</h3>
-                                    <p className="text-lg leading-relaxed">{bio.shortBio}</p>
+                                    <div
+                                        className="prose prose-lg dark:prose-invert max-w-none"
+                                        dangerouslySetInnerHTML={{ __html: bio.shortBio }}
+                                    />
                                 </div>
                             )}
 

@@ -326,6 +326,7 @@ export async function sendEventEmail(
                     subject,
                     html: fullEmailHtml,
                     attachments: attachments.length > 0 ? attachments : undefined,
+                    bcc: smtpFrom, // Auto-BCC to sender for archiving
                     messageId: uniqueMessageId,
                     headers: {
                         "X-Entity-Ref-ID": uniqueMessageId, // Prevents Gmail threading

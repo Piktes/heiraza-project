@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,6 +94,11 @@ export async function POST(request: NextRequest) {
         autoSoldOut,
       },
     });
+
+    // Log action with session username
+    const session = await getServerSession(authOptions);
+    const username = (session?.user as any)?.username || "Unknown";
+    await logAdminAction(username, "CREATE_EVENT", `Created event: ${title}`);
 
     // Return event with id for announcement sending
     return NextResponse.json({ success: true, id: event.id, event });

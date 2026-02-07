@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { compressImage, createThumbnail } from "@/lib/image-compression";
+import { PressKitBioEditor } from "@/components/admin/press-kit-bio-editor";
+import { InfoBar } from "@/components/admin/info-bar";
 
 // Server Actions
 import {
@@ -20,6 +22,30 @@ import {
     getPressKitContact, updatePressKitContact,
     getPressKitSettings, updatePressKitSettings
 } from "@/lib/actions/press-kit";
+
+// ========================================
+// UTILITY: Extract Embed URL from various formats
+// ========================================
+function extractEmbedUrl(input: string): string {
+    if (!input) return "";
+    const trimmed = input.trim();
+
+    // If iframe code pasted, extract src attribute
+    const iframeMatch = trimmed.match(/src=["']([^"']+)["']/);
+    if (iframeMatch) return iframeMatch[1];
+
+    // If Spotify share URL, convert to embed format
+    const spotifyMatch = trimmed.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album|playlist|artist)\/([a-zA-Z0-9]+)/);
+    if (spotifyMatch) return `https://open.spotify.com/embed/${spotifyMatch[1]}/${spotifyMatch[2]}`;
+
+    // If SoundCloud URL
+    if (trimmed.includes('soundcloud.com') && !trimmed.includes('/player/')) {
+        return `https://w.soundcloud.com/player/?url=${encodeURIComponent(trimmed)}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
+    }
+
+    // If already an embed URL or other format, use as-is
+    return trimmed;
+}
 
 // Types
 interface PressPhoto {
@@ -160,39 +186,53 @@ function BioSection() {
     if (loading) return <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
+            {/* Short Bio - Rich Text Editor */}
             <div>
                 <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium">Short Bio (2-3 sentences)</label>
-                    <label className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" checked={showShortBio} onChange={e => setShowShortBio(e.target.checked)} className="rounded" />
-                        Visible
-                    </label>
+                    <div>
+                        <label className="text-sm font-medium">Short Bio (2-3 sentences)</label>
+                        <p className="text-xs text-muted-foreground mt-1">Brief overview for quick reads</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowShortBio(!showShortBio)}
+                        className={`p-2 rounded-lg transition-colors ${showShortBio ? 'bg-accent-coral/20 text-accent-coral' : 'bg-muted text-muted-foreground'}`}
+                        title={showShortBio ? "Visible" : "Hidden"}
+                    >
+                        {showShortBio ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
                 </div>
-                <textarea
+                <PressKitBioEditor
                     value={shortBio}
-                    onChange={e => setShortBio(e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background/50 focus:ring-2 focus:ring-accent-coral outline-none"
+                    onChange={setShortBio}
                     placeholder="Brief bio for quick overview..."
                 />
             </div>
+
+            {/* Long Bio - Rich Text Editor */}
             <div>
                 <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium">Long Bio (Rich Text)</label>
-                    <label className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" checked={showLongBio} onChange={e => setShowLongBio(e.target.checked)} className="rounded" />
-                        Visible
-                    </label>
+                    <div>
+                        <label className="text-sm font-medium">Long Bio (Rich Text)</label>
+                        <p className="text-xs text-muted-foreground mt-1">Use the editor toolbar to format text, add links, and style content</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowLongBio(!showLongBio)}
+                        className={`p-2 rounded-lg transition-colors ${showLongBio ? 'bg-accent-coral/20 text-accent-coral' : 'bg-muted text-muted-foreground'}`}
+                        title={showLongBio ? "Visible" : "Hidden"}
+                    >
+                        {showLongBio ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
                 </div>
-                <textarea
+                <PressKitBioEditor
                     value={longBio}
-                    onChange={e => setLongBio(e.target.value)}
-                    rows={8}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background/50 focus:ring-2 focus:ring-accent-coral outline-none"
+                    onChange={setLongBio}
                     placeholder="Full biography with detailed information..."
                 />
             </div>
+
             <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2">
                 {saving ? <Loader2 size={16} className="animate-spin" /> : null}
                 Save Bio
@@ -397,10 +437,14 @@ function MusicSection() {
             return;
         }
         setSaving(true);
+
+        // Extract proper embed URL from iframe code or share URL
+        const processedUrl = extractEmbedUrl(newEmbedUrl);
+
         const formData = new FormData();
         formData.set("title", newTitle);
         formData.set("platform", newPlatform);
-        formData.set("embedUrl", newEmbedUrl);
+        formData.set("embedUrl", processedUrl);
 
         const result = await addMusicHighlight(formData);
         if (result.success) {
@@ -450,13 +494,16 @@ function MusicSection() {
                         <option value="apple">Apple Music</option>
                         <option value="youtube">YouTube Music</option>
                     </select>
-                    <input
-                        type="text"
-                        value={newEmbedUrl}
-                        onChange={e => setNewEmbedUrl(e.target.value)}
-                        className="px-3 py-2 rounded-lg border border-border bg-background/50"
-                        placeholder="Embed URL"
-                    />
+                    <div className="md:col-span-3">
+                        <input
+                            type="text"
+                            value={newEmbedUrl}
+                            onChange={e => setNewEmbedUrl(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-border bg-background/50"
+                            placeholder="Paste share link, embed URL, or full iframe code"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Supports Spotify, SoundCloud, YouTube Music share links or iframe codes</p>
+                    </div>
                 </div>
                 <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2">
                     {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
@@ -970,39 +1017,44 @@ function SettingsSection() {
 // ========================================
 export default function PressKitAdminPage() {
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8">
-            <div className="mb-8">
-                <h1 className="font-display text-3xl tracking-wide">Press Kit</h1>
-                <p className="text-muted-foreground mt-2">Manage your electronic press kit content</p>
-            </div>
+        <div className="min-h-screen">
+            {/* InfoBar */}
+            <InfoBar />
 
-            <Section title="Bio" icon={FileText} defaultOpen={true}>
-                <BioSection />
-            </Section>
+            <main className="max-w-5xl mx-auto px-4 pb-10">
+                <div className="mb-8">
+                    <h1 className="font-display text-display-md tracking-wider uppercase">Press Kit</h1>
+                    <p className="text-muted-foreground mt-2">Manage your electronic press kit content</p>
+                </div>
 
-            <Section title="Press Photos" icon={ImageIcon}>
-                <PhotosSection />
-            </Section>
+                <Section title="Bio" icon={FileText} defaultOpen={true}>
+                    <BioSection />
+                </Section>
 
-            <Section title="Music Highlights" icon={Music}>
-                <MusicSection />
-            </Section>
+                <Section title="Press Photos" icon={ImageIcon}>
+                    <PhotosSection />
+                </Section>
 
-            <Section title="Videos" icon={Video}>
-                <VideosSection />
-            </Section>
+                <Section title="Music Highlights" icon={Music}>
+                    <MusicSection />
+                </Section>
 
-            <Section title="Press Quotes" icon={Quote}>
-                <QuotesSection />
-            </Section>
+                <Section title="Videos" icon={Video}>
+                    <VideosSection />
+                </Section>
 
-            <Section title="Contact & Booking" icon={Mail}>
-                <ContactSection />
-            </Section>
+                <Section title="Press Quotes" icon={Quote}>
+                    <QuotesSection />
+                </Section>
 
-            <Section title="Settings" icon={Settings}>
-                <SettingsSection />
-            </Section>
+                <Section title="Contact & Booking" icon={Mail}>
+                    <ContactSection />
+                </Section>
+
+                <Section title="Settings" icon={Settings}>
+                    <SettingsSection />
+                </Section>
+            </main>
         </div>
     );
 }

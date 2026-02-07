@@ -3,6 +3,9 @@ import prisma from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { sendEventEmail } from "@/lib/email";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 
 interface Params {
     params: Promise<{ id: string }>;
@@ -76,6 +79,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             data: { ...rest, imageUrl },
         });
 
+        // Log action with session username
+        const session = await getServerSession(authOptions);
+        const username = (session?.user as any)?.username || "Unknown";
+        await logAdminAction(username, "UPDATE_EVENT", `Updated event: ${event.title}`);
+
         // Check if event was just marked as sold out AND autoSoldOut is enabled
         const wasSoldOut = currentEvent.isSoldOut;
         const nowSoldOut = event.isSoldOut;
@@ -126,6 +134,11 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         }
 
         await prisma.event.delete({ where: { id: eventId } });
+
+        // Log action with session username
+        const session = await getServerSession(authOptions);
+        const username = (session?.user as any)?.username || "Unknown";
+        await logAdminAction(username, "DELETE_EVENT", `Deleted event: ${event.title}`, { level: "WARN" });
 
         return NextResponse.json({ success: true });
     } catch (error) {

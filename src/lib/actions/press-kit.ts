@@ -4,6 +4,15 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
+
+// Helper to get current username from session
+async function getCurrentUsername(): Promise<string> {
+    const session = await getServerSession(authOptions);
+    return (session?.user as any)?.username || "Unknown";
+}
 
 // ========================================
 // HELPER: Upload base64 image to press-kit folder
@@ -90,6 +99,9 @@ export async function updatePressKitBio(formData: FormData) {
         });
     }
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_PRESS_KIT_BIO", "Updated Press Kit bio content");
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -155,6 +167,9 @@ export async function addPressPhoto(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_PRESS_PHOTO", `Added press photo: ${altText}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -180,6 +195,9 @@ export async function updatePressPhoto(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_PRESS_PHOTO", `Updated press photo: ${altText}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -199,6 +217,9 @@ export async function deletePressPhoto(formData: FormData) {
         }
 
         await prisma.pressPhoto.delete({ where: { id } });
+
+        const username = await getCurrentUsername();
+        await logAdminAction(username, "DELETE_PRESS_PHOTO", `Deleted press photo: ${photo.altText}`, { level: "WARN" });
     }
 
     revalidatePath("/admin/press-kit");
@@ -211,10 +232,13 @@ export async function togglePressPhotoVisibility(formData: FormData) {
     const id = parseInt(formData.get("id") as string);
     const currentStatus = formData.get("isVisible") === "true";
 
-    await prisma.pressPhoto.update({
+    const photo = await prisma.pressPhoto.update({
         where: { id },
         data: { isVisible: !currentStatus },
     });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "TOGGLE_PRESS_PHOTO", `${!currentStatus ? "Enabled" : "Disabled"} press photo: ${photo.altText}`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -252,6 +276,9 @@ export async function reorderPressPhotos(formData: FormData) {
             data: { sortOrder: item.sortOrder },
         });
     }
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "REORDER_PRESS_PHOTOS", `Reordered ${order.length} press photos`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -303,6 +330,9 @@ export async function addMusicHighlight(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_MUSIC_HIGHLIGHT", `Added music highlight: ${title}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -325,6 +355,9 @@ export async function updateMusicHighlight(formData: FormData) {
         data: { title, platform, embedUrl, isVisible },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_MUSIC_HIGHLIGHT", `Updated music highlight: ${title}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -334,7 +367,11 @@ export async function updateMusicHighlight(formData: FormData) {
 export async function deleteMusicHighlight(formData: FormData) {
     const id = parseInt(formData.get("id") as string);
 
+    const highlight = await prisma.musicHighlight.findUnique({ where: { id } });
     await prisma.musicHighlight.delete({ where: { id } });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "DELETE_MUSIC_HIGHLIGHT", `Deleted music highlight: ${highlight?.title}`, { level: "WARN" });
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -352,6 +389,9 @@ export async function reorderMusicHighlights(formData: FormData) {
             data: { sortOrder: item.sortOrder },
         });
     }
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "REORDER_MUSIC_HIGHLIGHTS", `Reordered ${order.length} music highlights`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -408,6 +448,9 @@ export async function addPressKitVideo(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_PRESS_VIDEO", `Added press kit video: ${title}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -429,6 +472,9 @@ export async function updatePressKitVideo(formData: FormData) {
         data: { title, videoUrl, isVisible },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_PRESS_VIDEO", `Updated press kit video: ${title}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -446,6 +492,9 @@ export async function deletePressKitVideo(formData: FormData) {
             await deleteUploadFile(video.thumbnailUrl);
         }
         await prisma.pressKitVideo.delete({ where: { id } });
+
+        const username = await getCurrentUsername();
+        await logAdminAction(username, "DELETE_PRESS_VIDEO", `Deleted press kit video: ${video.title}`, { level: "WARN" });
     }
 
     revalidatePath("/admin/press-kit");
@@ -464,6 +513,9 @@ export async function reorderPressKitVideos(formData: FormData) {
             data: { sortOrder: item.sortOrder },
         });
     }
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "REORDER_PRESS_VIDEOS", `Reordered ${order.length} press kit videos`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -514,6 +566,9 @@ export async function addQuoteCategory(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_QUOTE_CATEGORY", `Created quote category: ${name}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -533,6 +588,9 @@ export async function updateQuoteCategory(formData: FormData) {
         where: { id },
         data: { name, isVisible },
     });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_QUOTE_CATEGORY", `Updated quote category: ${name}`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -555,7 +613,11 @@ export async function deleteQuoteCategory(formData: FormData) {
         };
     }
 
+    const category = await prisma.pressQuoteCategory.findUnique({ where: { id } });
     await prisma.pressQuoteCategory.delete({ where: { id } });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "DELETE_QUOTE_CATEGORY", `Deleted quote category: ${category?.name}`, { level: "WARN" });
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -600,6 +662,9 @@ export async function addQuote(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_PRESS_QUOTE", `Added quote from: ${sourceName}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -629,6 +694,9 @@ export async function updateQuote(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_PRESS_QUOTE", `Updated quote from: ${sourceName}`);
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -638,7 +706,11 @@ export async function updateQuote(formData: FormData) {
 export async function deleteQuote(formData: FormData) {
     const id = parseInt(formData.get("id") as string);
 
+    const quote = await prisma.pressQuote.findUnique({ where: { id } });
     await prisma.pressQuote.delete({ where: { id } });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "DELETE_PRESS_QUOTE", `Deleted quote from: ${quote?.sourceName}`, { level: "WARN" });
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -650,10 +722,14 @@ export async function toggleQuoteVisibility(formData: FormData) {
     const id = parseInt(formData.get("id") as string);
     const currentStatus = formData.get("isVisible") === "true";
 
-    await prisma.pressQuote.update({
+    const quote = await prisma.pressQuote.update({
         where: { id },
         data: { isVisible: !currentStatus },
+        include: { category: true },
     });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "TOGGLE_PRESS_QUOTE", `${!currentStatus ? "Enabled" : "Disabled"} quote from: ${quote.sourceName}`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
@@ -701,6 +777,9 @@ export async function updatePressKitContact(formData: FormData) {
         });
     }
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_PRESS_KIT_CONTACT", "Updated Press Kit contact information");
+
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");
 
@@ -738,6 +817,9 @@ export async function updatePressKitSettings(formData: FormData) {
             data: { allowPhotoDownload, maxMusicTracks },
         });
     }
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_PRESS_KIT_SETTINGS", `Updated Press Kit settings: Download=${allowPhotoDownload}, MaxTracks=${maxMusicTracks}`);
 
     revalidatePath("/admin/press-kit");
     revalidatePath("/press-kit");

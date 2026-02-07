@@ -2,13 +2,22 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
+
+// Helper to get current username from session
+async function getCurrentUsername(): Promise<string> {
+  const session = await getServerSession(authOptions);
+  return (session?.user as any)?.username || "Unknown";
+}
 
 // ========================================
 // GET SITE SETTINGS
 // ========================================
 export async function getSiteSettings() {
   let settings = await prisma.siteSettings.findFirst();
-  
+
   // Create default settings if none exist
   if (!settings) {
     settings = await prisma.siteSettings.create({
@@ -25,7 +34,7 @@ export async function getSiteSettings() {
       },
     });
   }
-  
+
   return settings;
 }
 
@@ -61,6 +70,9 @@ export async function updateSiteSettings(formData: FormData) {
     },
   });
 
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "UPDATE_SETTINGS", "Updated site settings");
+
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/settings");
@@ -81,7 +93,7 @@ export async function toggleSetting(formData: FormData) {
   // Only allow toggling boolean settings
   const allowedSettings = [
     "isAudioPlayerVisible",
-    "isShopVisible", 
+    "isShopVisible",
     "isSocialLinksVisible",
     "isYoutubeVisible",
     "youtubeAutoScroll",
@@ -97,6 +109,9 @@ export async function toggleSetting(formData: FormData) {
     where: { id: settings.id },
     data: { [settingName]: !currentValue },
   });
+
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "UPDATE_SITE_SETTING", `Toggled ${settingName}: ${!currentValue}`);
 
   revalidatePath("/");
   revalidatePath("/admin");

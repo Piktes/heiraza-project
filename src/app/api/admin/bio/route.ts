@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { logAction } from "@/lib/logger";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 
 // GET - Fetch bio data
 export async function GET() {
@@ -61,12 +63,10 @@ export async function PUT(request: NextRequest) {
             });
         }
 
-        // Log the action
-        logAction(
-            "Sahadmin",
-            "UPDATE_BIO",
-            "Updated bio settings"
-        );
+        // Log the action with session username
+        const session = await getServerSession(authOptions);
+        const username = (session?.user as any)?.username || "Unknown";
+        await logAdminAction(username, "UPDATE_BIO", "Updated bio settings");
 
         return NextResponse.json({
             success: true,

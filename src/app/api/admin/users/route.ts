@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { logAdminAction, getRequestMeta } from "@/lib/audit-logger";
 
 // GET - List all admin users
 export async function GET(request: NextRequest) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new admin user
 export async function POST(request: NextRequest) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
 
 // PATCH - Update user (toggle active status)
 export async function PATCH(request: NextRequest) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -176,7 +177,7 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE - Delete admin user
 export async function DELETE(request: NextRequest) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

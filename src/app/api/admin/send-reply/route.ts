@@ -2,6 +2,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sendMessageReply, getEmailSignature, isValidEmail } from "@/lib/email";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 
 export async function POST(request: NextRequest) {
     try {
@@ -21,6 +24,11 @@ export async function POST(request: NextRequest) {
         const result = await sendMessageReply(messageId, to, subject, body);
 
         if (result.success) {
+            // Log action with session username
+            const session = await getServerSession(authOptions);
+            const username = (session?.user as any)?.username || "Unknown";
+            await logAdminAction(username, "REPLY_MESSAGE", `Replied to: ${to}`);
+
             return NextResponse.json({
                 success: true,
                 emailValid,

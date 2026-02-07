@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { logAction } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
         // Log the deletion action
         logAction(
-            session.user?.name || "Admin",
+            (session.user as any)?.username || session.user?.name || "Admin",
             "DELETE_SUBSCRIBER",
             `Deleted subscriber: ${subscriber.email}`
         );

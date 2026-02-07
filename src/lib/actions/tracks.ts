@@ -4,6 +4,15 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
+
+// Helper to get current username from session
+async function getCurrentUsername(): Promise<string> {
+  const session = await getServerSession(authOptions);
+  return (session?.user as any)?.username || "Unknown";
+}
 
 // ========================================
 // GET ACTIVE TRACKS (Frontend)
@@ -80,6 +89,9 @@ export async function addTrack(formData: FormData) {
     },
   });
 
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "CREATE_TRACK", `Added track: ${title}`);
+
   revalidatePath("/admin");
   revalidatePath("/");
 
@@ -125,6 +137,9 @@ export async function updateTrack(formData: FormData) {
     data: updateData,
   });
 
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "UPDATE_TRACK", `Updated track: ${title}`);
+
   revalidatePath("/admin");
   revalidatePath("/");
 
@@ -138,10 +153,13 @@ export async function toggleTrackActive(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const currentStatus = formData.get("isActive") === "true";
 
-  await prisma.track.update({
+  const track = await prisma.track.update({
     where: { id },
     data: { isActive: !currentStatus },
   });
+
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "TOGGLE_TRACK", `${!currentStatus ? "Enabled" : "Disabled"} track: ${track.title}`);
 
   revalidatePath("/admin");
   revalidatePath("/");
@@ -155,9 +173,13 @@ export async function toggleTrackActive(formData: FormData) {
 export async function deleteTrack(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
 
+  const track = await prisma.track.findUnique({ where: { id } });
   await prisma.track.delete({
     where: { id },
   });
+
+  const username = await getCurrentUsername();
+  await logAdminAction(username, "DELETE_TRACK", `Deleted track: ${track?.title}`, { level: "WARN" });
 
   revalidatePath("/admin");
   revalidatePath("/");

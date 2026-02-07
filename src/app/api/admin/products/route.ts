@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    
+
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const priceStr = formData.get("price") as string;
@@ -44,14 +47,14 @@ export async function POST(request: NextRequest) {
         // Extract base64 data
         const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
-        
+
         // Generate unique filename
         const filename = `product-${Date.now()}.jpg`;
         const filepath = path.join(uploadsDir, filename);
-        
+
         // Write file
         await writeFile(filepath, buffer);
-        
+
         // Update image to relative path
         image = `/uploads/products/${filename}`;
       } catch (err) {
@@ -77,6 +80,11 @@ export async function POST(request: NextRequest) {
         isActive,
       },
     });
+
+    // Log action with session username
+    const session = await getServerSession(authOptions);
+    const username = (session?.user as any)?.username || "Unknown";
+    await logAdminAction(username, "CREATE_PRODUCT", `Created product: ${name}`);
 
     return NextResponse.json({ success: true, product });
   } catch (error) {

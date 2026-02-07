@@ -2,6 +2,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 
 export async function POST(request: NextRequest) {
     try {
@@ -14,10 +17,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        await prisma.message.update({
+        const message = await prisma.message.update({
             where: { id },
             data: { isRead },
         });
+
+        // Log action with session username
+        const session = await getServerSession(authOptions);
+        const username = (session?.user as any)?.username || "Unknown";
+        await logAdminAction(username, "READ_MESSAGE", `${isRead ? "Marked as read" : "Marked as unread"}: ${message.email}`);
 
         return NextResponse.json({ success: true });
     } catch (error) {

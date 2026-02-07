@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { logAction } from "@/lib/logger";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
 // Force sync timestamp: 2026-02-03 21:52
 
 // OPTIONS - Handle CORS preflight
@@ -88,8 +90,10 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        // Log action
-        logAction("Sahadmin", "UPDATE_SOCIAL", "Updated social media links");
+        // Log action with session username
+        const session = await getServerSession(authOptions);
+        const username = (session?.user as any)?.username || "Unknown";
+        await logAdminAction(username, "UPDATE_SOCIAL_LINKS", "Updated social media links");
 
         return NextResponse.json({
             success: true,

@@ -4,6 +4,15 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { logAdminAction } from "@/lib/audit-logger";
+
+// Helper to get current username from session
+async function getCurrentUsername(): Promise<string> {
+    const session = await getServerSession(authOptions);
+    return (session?.user as any)?.username || "Unknown";
+}
 
 // ========================================
 // GET ACTIVE GALLERY IMAGES (Frontend)
@@ -76,6 +85,9 @@ export async function addGalleryImage(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_GALLERY_IMAGE", `Added gallery image: ${title || "Untitled"}`);
+
     revalidatePath("/admin");
     revalidatePath("/");
 
@@ -127,6 +139,9 @@ export async function addMultipleGalleryImages(formData: FormData) {
         return { success: false, error: "Failed to upload any images" };
     }
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "CREATE_GALLERY_IMAGE", `Added ${uploadedImages.length} gallery images`);
+
     return {
         success: true,
         uploadedCount: uploadedImages.length,
@@ -158,6 +173,9 @@ export async function updateGalleryImage(formData: FormData) {
         },
     });
 
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "UPDATE_GALLERY_IMAGE", `Updated gallery image: ${title || "ID " + id}`);
+
     revalidatePath("/admin");
     revalidatePath("/");
 
@@ -171,10 +189,13 @@ export async function toggleGalleryImageActive(formData: FormData) {
     const id = parseInt(formData.get("id") as string);
     const currentStatus = formData.get("isActive") === "true";
 
-    await prisma.galleryImage.update({
+    const image = await prisma.galleryImage.update({
         where: { id },
         data: { isActive: !currentStatus },
     });
+
+    const username = await getCurrentUsername();
+    await logAdminAction(username, "TOGGLE_GALLERY_IMAGE", `${!currentStatus ? "Enabled" : "Disabled"} gallery image: ${image.title || "ID " + id}`);
 
     revalidatePath("/admin");
     revalidatePath("/");
@@ -202,6 +223,9 @@ export async function deleteGalleryImage(formData: FormData) {
         }
 
         await prisma.galleryImage.delete({ where: { id } });
+
+        const username = await getCurrentUsername();
+        await logAdminAction(username, "DELETE_GALLERY_IMAGE", `Deleted gallery image: ${image.title || "ID " + id}`, { level: "WARN" });
     }
 
     revalidatePath("/admin");

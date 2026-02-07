@@ -694,19 +694,29 @@ export async function updateQuote(formData: FormData) {
     const categoryId = parseInt(formData.get("categoryId") as string);
     const isVisible = formData.get("isVisible") === "true";
 
+    const imageData = formData.get("imageData") as string | null;
+
     if (!id) {
         return { success: false, error: "Invalid ID" };
     }
 
+    const data: any = {
+        quoteText,
+        sourceName,
+        sourceUrl: sourceUrl || null,
+        categoryId,
+        isVisible,
+    };
+
+    if (imageData) {
+        // In a real app with S3/Cloudinary, we'd upload here. 
+        // For now we save the base64 string directly as per existing pattern
+        data.imageUrl = imageData;
+    }
+
     await prisma.pressQuote.update({
         where: { id },
-        data: {
-            quoteText,
-            sourceName,
-            sourceUrl: sourceUrl || null,
-            categoryId,
-            isVisible,
-        },
+        data,
     });
 
     const username = await getCurrentUsername();

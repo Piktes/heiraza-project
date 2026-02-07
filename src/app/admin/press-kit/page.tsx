@@ -498,12 +498,25 @@ function PhotosSection() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label className="text-sm text-muted-foreground">Image *</label>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-                            className="w-full mt-1 text-sm"
-                        />
+                        <div className="mt-1 flex items-center gap-3">
+                            <label
+                                htmlFor="photo-upload"
+                                className="cursor-pointer px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-medium transition-colors border border-border flex items-center gap-2"
+                            >
+                                <ImageIcon size={16} />
+                                Choose File
+                            </label>
+                            <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                                {selectedFile ? selectedFile.name : "No file selected"}
+                            </span>
+                            <input
+                                id="photo-upload"
+                                type="file"
+                                accept="image/*"
+                                onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                                className="hidden"
+                            />
+                        </div>
                     </div>
                     <div>
                         <label className="text-sm text-muted-foreground">Alt Text *</label>
@@ -876,6 +889,7 @@ function QuotesSection() {
     const [newCategoryId, setNewCategoryId] = useState<number | null>(null);
     const [newQuoteImage, setNewQuoteImage] = useState<string | null>(null);
     const [quoteImagePreview, setQuoteImagePreview] = useState<string | null>(null);
+    const [editingQuote, setEditingQuote] = useState<PressQuote | null>(null);
 
     const loadData = async () => {
         const [cats, quoteList] = await Promise.all([getAllQuoteCategories(), getAllQuotes()]);
@@ -941,7 +955,7 @@ function QuotesSection() {
         }
     };
 
-    const handleAddQuote = async () => {
+    const handleSaveQuote = async () => {
         if (!newQuoteText.trim() || !newSourceName.trim() || !newCategoryId) {
             toast.error("Please fill in quote, source, and select category");
             return;
@@ -956,17 +970,48 @@ function QuotesSection() {
             formData.set("imageData", newQuoteImage);
         }
 
-        const result = await addQuote(formData);
-        if (result.success) {
-            toast.success("Quote added");
-            setNewQuoteText("");
-            setNewSourceName("");
-            setNewSourceUrl("");
-            setNewQuoteImage(null);
-            setQuoteImagePreview(null);
-            loadData();
+        if (editingQuote) {
+            formData.set("id", editingQuote.id.toString());
+            // Preserve existing visibility state or let server handle it (server toggle is separate)
+            formData.set("isVisible", editingQuote.isVisible.toString());
+
+            const result = await updateQuote(formData);
+            if (result.success) {
+                toast.success("Quote updated");
+                resetForm();
+                loadData();
+            }
+        } else {
+            const result = await addQuote(formData);
+            if (result.success) {
+                toast.success("Quote added");
+                resetForm();
+                loadData();
+            }
         }
         setSaving(false);
+    };
+
+    const handleEditClick = (quote: PressQuote) => {
+        setEditingQuote(quote);
+        setNewQuoteText(quote.quoteText);
+        setNewSourceName(quote.sourceName);
+        setNewSourceUrl(quote.sourceUrl || "");
+        setNewCategoryId(quote.categoryId);
+        setQuoteImagePreview(quote.imageUrl); // Show existing image
+        setNewQuoteImage(null); // Reset new image buffer
+
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const resetForm = () => {
+        setEditingQuote(null);
+        setNewQuoteText("");
+        setNewSourceName("");
+        setNewSourceUrl("");
+        setNewQuoteImage(null);
+        setQuoteImagePreview(null);
     };
 
     const handleDelete = async () => {
@@ -1032,10 +1077,17 @@ function QuotesSection() {
                 </div>
             )}
 
-            {/* Add Quote */}
+            {/* Add/Edit Quote */}
             {categories.length > 0 && (
-                <div className="p-4 border border-dashed border-border rounded-xl">
-                    <h4 className="font-medium mb-3">Add Quote</h4>
+                <div className={`p-4 border rounded-xl ${editingQuote ? 'border-accent-coral/50 bg-accent-coral/5' : 'border-dashed border-border'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium">{editingQuote ? "Edit Quote" : "Add Quote"}</h4>
+                        {editingQuote && (
+                            <button onClick={resetForm} className="text-xs text-muted-foreground hover:text-foreground">
+                                Cancel Edit
+                            </button>
+                        )}
+                    </div>
                     <div className="space-y-4">
                         <textarea
                             value={newQuoteText}
@@ -1074,12 +1126,25 @@ function QuotesSection() {
                         <div className="flex items-center gap-4">
                             <div className="flex-1">
                                 <label className="block text-sm text-muted-foreground mb-1">Cover Image (optional)</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleQuoteImageSelect}
-                                    className="w-full text-sm file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-accent-coral/10 file:text-accent-coral hover:file:bg-accent-coral/20"
-                                />
+                                <div className="mt-1 flex items-center gap-3">
+                                    <label
+                                        htmlFor="quote-image-upload"
+                                        className="cursor-pointer px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-medium transition-colors border border-border flex items-center gap-2 w-fit"
+                                    >
+                                        <ImageIcon size={16} />
+                                        Choose File
+                                    </label>
+                                    <span className="text-sm text-muted-foreground truncate max-w-[150px]">
+                                        {newQuoteImage ? "Image selected" : "No file selected"}
+                                    </span>
+                                    <input
+                                        id="quote-image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleQuoteImageSelect}
+                                        className="hidden"
+                                    />
+                                </div>
                             </div>
                             {quoteImagePreview && (
                                 <div className="relative">
@@ -1098,10 +1163,17 @@ function QuotesSection() {
                             )}
                         </div>
 
-                        <button onClick={handleAddQuote} disabled={saving} className="btn-primary flex items-center gap-2">
-                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                            Add Quote
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={handleSaveQuote} disabled={saving} className="btn-primary flex items-center gap-2">
+                                {saving ? <Loader2 size={16} className="animate-spin" /> : (editingQuote ? <Edit size={16} /> : <Plus size={16} />)}
+                                {editingQuote ? "Update Quote" : "Add Quote"}
+                            </button>
+                            {editingQuote && (
+                                <button onClick={resetForm} disabled={saving} className="px-4 py-2 hover:bg-muted rounded-lg text-sm transition-colors">
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -1118,6 +1190,13 @@ function QuotesSection() {
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-muted-foreground">— {q.sourceName}</span>
                                         <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleEditClick(q)}
+                                                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                                                title="Edit"
+                                            >
+                                                <Edit size={14} />
+                                            </button>
                                             <button
                                                 onClick={() => handleToggleQuoteVisibility(q)}
                                                 className={`p-1 rounded transition-colors ${q.isVisible ? 'text-accent-coral hover:bg-accent-coral/10' : 'text-muted-foreground hover:bg-muted'}`}
